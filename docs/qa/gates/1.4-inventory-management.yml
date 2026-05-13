@@ -1,0 +1,93 @@
+schema: 1
+story: '1.4'
+gate: PASS
+status_reason: >
+  All 7 acceptance criteria met. EC-1 guard (quantity ≥ 0) enforced pre-transaction at service
+  level and verified by test. Audit trail is append-only. Contract Pattern upheld — no raw Prisma
+  in page or dialog layer. 22 tests passing; 0 TS errors; 0 lint errors.
+reviewer: Quinn
+updated: '2026-05-13T12:00:00Z'
+top_issues:
+  - id: 'ARCH-001'
+    severity: low
+    finding: >
+      estoque/page.tsx imports InventoryService directly from
+      @/features/inventory/services/inventory.service instead of the barrel
+      @/features/inventory. The barrel export exists precisely to abstract the
+      internal path. Same pattern was flagged in Story 1.3 (direct Prisma in service)
+      — the team should adopt barrel-only imports for feature layer consumers.
+    suggested_action: >
+      Change page import to: import { InventoryService } from '@/features/inventory'
+      One-line fix. Non-blocking for MVP.
+
+  - id: 'ARCH-002'
+    severity: low
+    finding: >
+      getLowStockAlerts() fetches ALL inventory rows (including archived products)
+      from DB and then filters isArchived in JavaScript. This is correct but
+      inefficient at scale. Should push the archived filter to Prisma where clause.
+    suggested_action: >
+      Add where: { variant: { product: { isArchived: false } } } to the
+      prisma.inventory.findMany() call in getLowStockAlerts(). Eliminates the
+      in-memory isArchived filter. Non-blocking for MVP scale.
+
+  - id: 'MNT-001'
+    severity: low
+    finding: >
+      getInventoryList() uses v.inventory!.id (non-null assertion, line 31).
+      This is safe as long as Story 1.3's guarantee (every variant gets an Inventory
+      row on creation) holds. A missing inventory row would cause a runtime crash
+      rather than a graceful empty state.
+    suggested_action: >
+      Replace with: inventoryId: v.inventory?.id ?? '' and skip or log a warning
+      for variants missing an inventory record. Non-blocking for MVP given the
+      Story 1.3 invariant.
+
+  - id: 'TEST-001'
+    severity: low
+    finding: >
+      No explicit unit test for InventoryListItem.status derivation at the equality
+      boundary: qty === minStockAlert should produce 'Alerta', not 'Normal'. The
+      zero-stock test indirectly exercises qty=0 <= minStockAlert but the
+      qty === minStockAlert > 0 boundary is untested.
+    suggested_action: >
+      Add a test case in getInventoryList (or status-derivation helper) with
+      quantity=3, minStockAlert=3 and assert status === 'Alerta'. Low-risk gap
+      but worth explicit coverage given the <= boundary semantics.
+
+  - id: 'SEC-001'
+    severity: low
+    finding: >
+      updateMinStockAlertAction() in actions.ts has no try/catch. If the service
+      throws (e.g., negative value or Prisma error), the error will surface as an
+      unhandled Next.js Server Action error instead of a structured { success, error }
+      response — consistent with adjustStockAction's pattern.
+    suggested_action: >
+      Wrap in try/catch returning { success: boolean; error?: string } to match
+      adjustStockAction's contract. Non-blocking since no UI currently calls this
+      action within Story 1.4 scope.
+
+waiver: { active: false }
+
+# --- AC Traceability ---
+# AC-1: PASS — inventory.contract.ts exports TxType, InventoryWithVariant,
+#        InventoryTransactionRecord, AdjustStockDTO, LowStockAlert, InventoryListItem.
+#        All re-exported from index.ts barrel. No monetary fields.
+# AC-2: PASS — InventoryService: getInventoryList (join+filter+order), getVariantHistory
+#        (DESC, empty-array safe), getLowStockAlerts (JS filter on archived), getZeroStockVariants
+#        (delegates to getInventoryList), adjustStock (EC-1 guard pre-tx, prisma.$transaction
+#        with inventory update + InventoryTransaction create), updateMinStockAlert (value >= 0 guard).
+# AC-3: PASS — adjustStockAction: 'use server', try/catch, revalidatePath('/estoque'),
+#        returns { success, error? }. updateMinStockAlertAction: 'use server', revalidatePath.
+# AC-4: PASS — page.tsx is async Server Component; fetches getInventoryList(); 3 summary cards
+#        (Total de Variantes, Em Alerta, Estoque Zerado); data table with 7+1 columns; StatusBadge
+#        (Normal/Alerta/Zerado); sort order Zerado→Alerta→Normal then productName asc.
+# AC-5: PASS — StockAdjustDialog: 'use client', props variantId/sku/currentQuantity; Tipo radio
+#        (PURCHASE/ADJUSTMENT); Quantidade min 1; conditional Sinal toggle for ADJUSTMENT;
+#        Observação optional; Zod+RHF; calls adjustStockAction; inline success ('Estoque atualizado')
+#        + auto-close after 1.2s; inline error from server response.
+# AC-6: PASS — 8 tests (adjustStock PURCHASE, ADJUSTMENT positive, ADJUSTMENT below-zero throws
+#        AND transaction not called, ADJUSTMENT to zero succeeds; getLowStockAlerts boundary;
+#        getZeroStockVariants; updateMinStockAlert negative throws; updateMinStockAlert zero ok).
+# AC-7: PASS — tsc: 0 errors; lint: 0 errors (1 warning RHF/React Compiler incompatibility,
+#        non-blocking); tests: 22/22 pass; dev server: not smoke-tested (7.4 unchecked in story).
