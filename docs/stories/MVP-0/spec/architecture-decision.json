@@ -1,0 +1,38 @@
+﻿{
+  "storyId": "MVP-0",
+  "documentType": "architecture-decision",
+  "createdAt": "2026-05-13T08:45:00Z",
+  "createdBy": "@architect",
+  "status": "APPROVED",
+  "stack": {
+    "framework": { "name": "Next.js", "version": "16+", "pattern": "App Router + Modular Monolith" },
+    "language": { "name": "TypeScript", "version": "5+", "config": "strict" },
+    "database": { "name": "PostgreSQL", "version": "16", "provider": "Neon (serverless)" },
+    "orm": { "name": "Prisma", "version": "5+" },
+    "ui": { "name": "shadcn/ui + Tailwind CSS", "version": "latest" },
+    "stateGlobal": { "name": "Zustand", "version": "4.5+" },
+    "stateServer": { "name": "React Query (TanStack)", "version": "5+" },
+    "forms": { "name": "React Hook Form + Zod", "version": "7.50+ / 3.22+" },
+    "financial": { "name": "Decimal.js", "version": "10+", "rationale": "NUNCA Float para dinheiro" },
+    "auth": { "name": "NextAuth.js v5", "version": "5+" },
+    "deploy": { "app": "Vercel", "database": "Neon" }
+  },
+  "architecturalPattern": "Modular Monolith",
+  "criticalDecisions": [
+    "Todas transações financeiras+estoque usam prisma.$transaction() para garantir atomicidade",
+    "Campos monetários usam Prisma Decimal (@db.Decimal(10,2)) + Decimal.js — zero Float",
+    "SaleItem captura unitPrice e unitCost como snapshot — histórico financeiro imutável",
+    "InventoryTransaction é append-only — audit trail inviolável",
+    "paymentBreakdown como JSON — extensível sem migration",
+    "refNfe reservado em Sale — NF-e extensível sem breaking change",
+    "isArchived (soft delete) em Product — integridade do histórico preservada",
+    "app/api/v1/ como e-commerce bridge — API-first desde o início"
+  ],
+  "delegatedToDataEngineer": [
+    "Indexes de performance",
+    "CHECK constraints no banco",
+    "Query optimization para analytics de giro",
+    "Migration strategy e seed",
+    "Connection pooling para Neon serverless"
+  ]
+}

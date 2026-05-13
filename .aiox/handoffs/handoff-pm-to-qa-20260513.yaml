@@ -1,0 +1,24 @@
+﻿handoff:
+  from_agent: "pm"
+  to_agent: "qa"
+  timestamp: "2026-05-13T09:00:00Z"
+  consumed: false
+  story_context:
+    story_id: "MVP-0"
+    story_path: "docs/stories/MVP-0/spec/spec.md"
+    story_status: "spec-write-complete"
+    current_task: "critique-spec MVP-0 — avaliar qualidade, completude e rastreabilidade do spec.md"
+    branch: "N/A (greenfield)"
+  decisions:
+    - "Article IV gate PASSED: 12 FRs + 4 NFRs + 4 CONs todos referenciados"
+    - "Stack: Next.js 16 + TypeScript + Prisma + PostgreSQL (Neon) + shadcn/ui"
+    - "Complexidade COMPLEX (16/25) — 4 epics sugeridos"
+    - "Operação crítica: prisma.$transaction() para sale+inventory+cashflow"
+    - "Decimal.js obrigatório para campos monetários"
+  files_modified:
+    - "docs/stories/MVP-0/spec/requirements.json"
+    - "docs/stories/MVP-0/spec/complexity.json"
+    - "docs/stories/MVP-0/spec/architecture-decision.json"
+    - "docs/stories/MVP-0/spec/spec.md"
+  blockers: []
+  next_action: "Executar *critique-spec MVP-0: avaliar spec.md contra 6 dimensoes de qualidade, emitir veredicto APPROVED|NEEDS_REVISION|BLOCKED com score"

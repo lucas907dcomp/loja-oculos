@@ -1,0 +1,487 @@
+{
+  "storyId": "MVP-0",
+  "projectName": "Gestão Loja de Óculos — Backoffice/PDV",
+  "gatheredAt": "2026-05-13T08:29:00.000Z",
+  "source": "user",
+  "gatheredBy": "@pm",
+  "elicitationVersion": "2.0",
+  "status": "COMPLETE — elicitation done 2026-05-13",
+  "elicitationAnswers": {
+    "OQ-1": "1 perfil único (dono) — sem controle de permissões no MVP",
+    "OQ-2": "Sem requisito offline — web app puro, internet sempre disponível",
+    "OQ-3": "PDV responsivo — funciona em PC (mouse+teclado) e tablet (touch)",
+    "OQ-4": "NF-e fora do escopo do MVP — modelagem deve permitir extensão futura"
+  },
+
+  "functional": [
+    {
+      "id": "FR-1",
+      "description": "Cadastro de produtos (óculos de sol) com suporte a variantes compostas: cor da armação, cor da lente, nível de proteção UV e flag polarizado",
+      "priority": "P0",
+      "rationale": "Produto central do negócio; sem cadastro estruturado não há rastreabilidade de estoque nem precificação por variante",
+      "acceptance": [
+        "AC-1.1: Produto pode ter N variantes configuradas",
+        "AC-1.2: Cada variante combina cor_armacao + cor_lente + protecao_uv + polarizado",
+        "AC-1.3: SKU único gerado por variante automaticamente",
+        "AC-1.4: Imagens associáveis por variante"
+      ]
+    },
+    {
+      "id": "FR-2",
+      "description": "Controle de estoque granular por variante com alertas de baixa e histórico de movimentações",
+      "priority": "P0",
+      "rationale": "Coração operacional — sem controle de giro por variante, o lojista não sabe o que comprar nem o que está parado",
+      "acceptance": [
+        "AC-2.1: Saldo em estoque atualizado em tempo real por variante",
+        "AC-2.2: Alerta configurável de estoque mínimo por variante",
+        "AC-2.3: Histórico de entradas e saídas com data, tipo e responsável",
+        "AC-2.4: Relatório de variantes com estoque zerado"
+      ]
+    },
+    {
+      "id": "FR-3",
+      "description": "PDV simplificado para registro de vendas com suporte a Pix, Cartão de Crédito/Débito e Dinheiro",
+      "priority": "P0",
+      "rationale": "Operação diária da loja; precisa ser rápido e sem fricção",
+      "acceptance": [
+        "AC-3.1: Venda pode incluir N itens (produtos/variantes)",
+        "AC-3.2: Aceita Pix, Cartão Crédito, Cartão Débito e Dinheiro",
+        "AC-3.3: Pagamento pode ser dividido entre meios de pagamento",
+        "AC-3.4: Estoque decrementado automaticamente ao finalizar venda",
+        "AC-3.5: Comprovante/recibo imprimível ou exportável"
+      ]
+    },
+    {
+      "id": "FR-4",
+      "description": "Input de Custo de Aquisição por variante e definição de Preço de Venda com cálculo automático de Margem de Lucro Bruta",
+      "priority": "P0",
+      "rationale": "Objetivo principal do lojista: comprar bem e maximizar margem",
+      "acceptance": [
+        "AC-4.1: Campo de custo de aquisição editável por variante",
+        "AC-4.2: Campo de preço de venda editável por variante",
+        "AC-4.3: Margem bruta (%) calculada e exibida automaticamente: (PV - CA) / PV * 100",
+        "AC-4.4: Histórico de alterações de custo e preço registrado"
+      ]
+    },
+    {
+      "id": "FR-5",
+      "description": "Fluxo de caixa diário com registro de entradas (vendas), saídas (despesas operacionais) e saldo consolidado",
+      "priority": "P0",
+      "rationale": "Inteligência financeira para decisões de compra e operação",
+      "acceptance": [
+        "AC-5.1: Vendas registradas automaticamente como entradas no fluxo de caixa",
+        "AC-5.2: Despesas operacionais podem ser inseridas manualmente",
+        "AC-5.3: Saldo diário calculado: entradas - saídas",
+        "AC-5.4: Visão semanal e mensal consolidada"
+      ]
+    },
+    {
+      "id": "FR-6",
+      "description": "Gestão de clientes (CRM Lite): cadastro com histórico de compras e preferências de estilo",
+      "priority": "P1",
+      "rationale": "Em loja especializada, clientes recorrentes e compra por indicação são críticos — CRM leve aumenta ticket médio e retenção",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-6.1: Cadastro de cliente com nome, telefone, e-mail",
+        "AC-6.2: Histórico de compras vinculado ao cliente",
+        "AC-6.3: Tags de preferência (ex: esportivo, casual, polarizado)",
+        "AC-6.4: Venda pode ser vinculada a cliente cadastrado (opcional)"
+      ]
+    },
+    {
+      "id": "FR-7",
+      "description": "Gestão de fornecedores: cadastro com contato, prazo de entrega e histórico de pedidos de compra",
+      "priority": "P1",
+      "rationale": "Comprar bem = conhecer seus fornecedores; dados de lead time alimentam decisão de reposição",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-7.1: Cadastro de fornecedor com nome, CNPJ, contato, prazo de entrega",
+        "AC-7.2: Produto vinculado a fornecedor(es)",
+        "AC-7.3: Registro de pedidos de compra com status (solicitado, entregue)"
+      ]
+    },
+    {
+      "id": "FR-8",
+      "description": "Analytics de giro de estoque: velocidade de vendas por variante e previsão de dias para ruptura",
+      "priority": "P1",
+      "rationale": "Transforma o controle de estoque de reativo para preditivo — o lojista sabe o que comprar antes de acabar",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-8.1: Velocidade de vendas calculada (unidades/semana por variante)",
+        "AC-8.2: Estimativa de dias até ruptura de estoque exibida",
+        "AC-8.3: Lista de variantes críticas (ruptura prevista < 7 dias) com destaque"
+      ]
+    },
+    {
+      "id": "FR-9",
+      "description": "Gestão de devoluções e trocas com ajuste automático de estoque e reversão financeira",
+      "priority": "P1",
+      "rationale": "Operação normal de varejo; sem controle gera descrepância de estoque e financeiro",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-9.1: Troca incrementa estoque do produto devolvido, decrementa do novo",
+        "AC-9.2: Devolução incrementa estoque e gera lançamento de saída no caixa",
+        "AC-9.3: Histórico de devoluções/trocas vinculado à venda original"
+      ]
+    },
+    {
+      "id": "FR-10",
+      "description": "Geração e impressão de etiquetas de preço com código de barras/QR Code por variante",
+      "priority": "P1",
+      "rationale": "Operação de varejo exige etiquetagem; QR Code é a ponte física-digital para o futuro e-commerce",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-10.1: Etiqueta gerada com nome do produto, variante, preço e código",
+        "AC-10.2: QR Code aponta para URL configurável (futura página do produto no e-commerce)",
+        "AC-10.3: Impressão em lote por produto ou por compra"
+      ]
+    },
+    {
+      "id": "FR-11",
+      "description": "Dashboard executivo: top produtos por margem, top produtos por giro, estoque parado (> 60 dias sem venda)",
+      "priority": "P1",
+      "rationale": "O lojista precisa de inteligência de negócio em uma tela; dead stock = capital imobilizado",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-11.1: Top 10 produtos por margem bruta no período",
+        "AC-11.2: Top 10 produtos por velocidade de giro",
+        "AC-11.3: Lista de variantes sem movimento nos últimos 60 dias",
+        "AC-11.4: Receita total, margem média e ticket médio do período"
+      ]
+    },
+    {
+      "id": "FR-12",
+      "description": "Exportação de catálogo de produtos para JSON/CSV estruturado para integração com e-commerce futuro",
+      "priority": "P2",
+      "rationale": "Preparação para e-commerce sem retrabalho; catálogo já estruturado com variantes, fotos, preços",
+      "pm_suggestion": true,
+      "acceptance": [
+        "AC-12.1: Exportação inclui produtos, variantes, preços, estoque e imagens",
+        "AC-12.2: Formato compatível com schemas de e-commerce (ex: WooCommerce, Shopify)",
+        "AC-12.3: Filtros de exportação por categoria, fornecedor ou status"
+      ]
+    }
+  ],
+
+  "nonFunctional": [
+    {
+      "id": "NFR-1",
+      "category": "performance",
+      "description": "PDV deve completar uma venda em menos de 3 cliques e registrar em < 2 segundos",
+      "metric": "Tempo de registro de venda simples < 2s em rede local"
+    },
+    {
+      "id": "NFR-2",
+      "category": "usability",
+      "description": "Interface deve ser operável por lojista sem treinamento técnico — UX de varejo simples",
+      "metric": "Operador novo deve completar primeira venda em < 5 minutos"
+    },
+    {
+      "id": "NFR-3",
+      "category": "reliability",
+      "description": "Dados financeiros e de estoque nunca devem ser perdidos mesmo em caso de falha inesperada",
+      "metric": "Zero perda de dados de transações; backup automático diário"
+    },
+    {
+      "id": "NFR-4",
+      "category": "scalability",
+      "description": "Arquitetura deve suportar integração futura com e-commerce sem reescrita do core",
+      "metric": "APIs RESTful expostas para todos os recursos principais"
+    }
+  ],
+
+  "constraints": [
+    {
+      "id": "CON-1",
+      "type": "technical",
+      "description": "Stack deve ser a mais produtiva possível para desenvolvimento rápido — velocidade de entrega é prioridade",
+      "impact": "Favorece frameworks full-stack com convenções fortes (ex: Next.js, Laravel, Rails)"
+    },
+    {
+      "id": "CON-2",
+      "type": "technical",
+      "description": "Arquitetura deve facilitar integração futura com e-commerce próprio — reuso de catálogo, clientes e estoque",
+      "impact": "Favorecer API-first design; separar domínio de UI desde o início"
+    },
+    {
+      "id": "CON-3",
+      "type": "business",
+      "description": "MVP focado em loja física única — sem multi-loja no escopo inicial",
+      "impact": "Sem lógica de multi-tenant no banco de dados no MVP; mas modelagem não deve impedir expansão"
+    },
+    {
+      "id": "CON-4",
+      "type": "business",
+      "description": "Produto exclusivo: óculos de sol — sem categorias genéricas no MVP",
+      "impact": "Variantes específicas de óculos (cor armação, lente, UV, polarizado) são first-class citizens no schema"
+    },
+    {
+      "id": "CON-5",
+      "type": "security",
+      "description": "Endpoints app/api/v1/ (e-commerce bridge) protegidos por Static API Key — cliente e-commerce deve enviar header X-API-Key em todas as requisições; chave armazenada em variável de ambiente ECOMMERCE_API_KEY no servidor",
+      "impact": "Impede exposição pública de dados de estoque, clientes e preços; src/middleware.ts valida o header para o matcher /api/v1/:path*",
+      "decidedAt": "2026-05-13",
+      "decidedBy": "@pm",
+      "rationale": "Opção B selecionada: balance entre segurança adequada para MVP e simplicidade operacional; sem necessidade de OAuth ou JWT separado para o cliente e-commerce no MVP"
+    }
+  ],
+
+  "assumptions": [
+    {
+      "id": "ASM-1",
+      "description": "Sistema monousuário — 1 perfil único (dono) com acesso total. Sem controle de permissões no MVP.",
+      "risk_if_wrong": "N/A — confirmado pelo usuário",
+      "validation_needed": false,
+      "validated": true
+    },
+    {
+      "id": "ASM-2",
+      "description": "Conexão à internet sempre disponível. Web app puro sem modo offline.",
+      "risk_if_wrong": "N/A — confirmado pelo usuário",
+      "validation_needed": false,
+      "validated": true
+    },
+    {
+      "id": "ASM-3",
+      "description": "Integração com maquininha de cartão via TEF/API não é requisito no MVP — operador registra manualmente o meio de pagamento",
+      "risk_if_wrong": "Fricção operacional; possibilidade de erro humano no registro do meio de pagamento",
+      "validation_needed": false,
+      "validated": true
+    },
+    {
+      "id": "ASM-4",
+      "description": "NF-e fora do escopo do MVP. Modelagem do banco deve permitir extensão futura (campo ref_nfe em Sale).",
+      "risk_if_wrong": "N/A — confirmado pelo usuário",
+      "validation_needed": false,
+      "validated": true
+    },
+    {
+      "id": "ASM-5",
+      "description": "PDV responsivo — funciona em PC (desktop-first) com suporte a tablet touchscreen. Sem requisito de app nativo.",
+      "risk_if_wrong": "N/A — confirmado pelo usuário",
+      "validation_needed": false,
+      "validated": true
+    }
+  ],
+
+  "domainModel": [
+    {
+      "id": "DM-1",
+      "entity": "Product",
+      "attributes": ["id", "name", "brand", "description", "category", "supplier_id", "created_at"],
+      "relationships": [
+        { "type": "has_many", "target": "ProductVariant" },
+        { "type": "belongs_to", "target": "Supplier" }
+      ]
+    },
+    {
+      "id": "DM-2",
+      "entity": "ProductVariant",
+      "attributes": ["id", "product_id", "sku", "frame_color", "lens_color", "uv_protection", "is_polarized", "cost_price", "sale_price", "image_urls"],
+      "relationships": [
+        { "type": "belongs_to", "target": "Product" },
+        { "type": "has_one", "target": "Inventory" },
+        { "type": "has_many", "target": "SaleItem" }
+      ]
+    },
+    {
+      "id": "DM-3",
+      "entity": "Inventory",
+      "attributes": ["id", "variant_id", "quantity", "min_stock_alert", "last_updated_at"],
+      "relationships": [
+        { "type": "belongs_to", "target": "ProductVariant" },
+        { "type": "has_many", "target": "InventoryTransaction" }
+      ]
+    },
+    {
+      "id": "DM-4",
+      "entity": "InventoryTransaction",
+      "attributes": ["id", "inventory_id", "type", "quantity_delta", "reason", "reference_id", "created_at"],
+      "notes": "type: SALE | PURCHASE | RETURN | ADJUSTMENT | EXCHANGE",
+      "relationships": [
+        { "type": "belongs_to", "target": "Inventory" }
+      ]
+    },
+    {
+      "id": "DM-5",
+      "entity": "Sale",
+      "attributes": ["id", "customer_id", "total_amount", "payment_method", "payment_breakdown", "status", "created_at"],
+      "relationships": [
+        { "type": "has_many", "target": "SaleItem" },
+        { "type": "belongs_to", "target": "Customer" },
+        { "type": "has_one", "target": "CashFlowEntry" }
+      ]
+    },
+    {
+      "id": "DM-6",
+      "entity": "SaleItem",
+      "attributes": ["id", "sale_id", "variant_id", "quantity", "unit_price", "unit_cost", "discount"],
+      "relationships": [
+        { "type": "belongs_to", "target": "Sale" },
+        { "type": "belongs_to", "target": "ProductVariant" }
+      ]
+    },
+    {
+      "id": "DM-7",
+      "entity": "Customer",
+      "attributes": ["id", "name", "phone", "email", "tags", "created_at"],
+      "relationships": [
+        { "type": "has_many", "target": "Sale" }
+      ]
+    },
+    {
+      "id": "DM-8",
+      "entity": "Supplier",
+      "attributes": ["id", "name", "cnpj", "contact_name", "phone", "email", "lead_time_days"],
+      "relationships": [
+        { "type": "has_many", "target": "Product" }
+      ]
+    },
+    {
+      "id": "DM-9",
+      "entity": "CashFlowEntry",
+      "attributes": ["id", "type", "amount", "description", "reference_id", "reference_type", "date", "created_at"],
+      "notes": "type: INCOME | EXPENSE — reference_id aponta para Sale ou despesa manual",
+      "relationships": []
+    }
+  ],
+
+  "interactions": [
+    {
+      "id": "INT-1",
+      "trigger": "Operador inicia nova venda no PDV",
+      "flow": [
+        "1. Tela de PDV em branco",
+        "2. Operador busca produto por nome, SKU ou scanner",
+        "3. Seleciona variante (grade visual de cores)",
+        "4. Adiciona à sacola; ajusta quantidade se necessário",
+        "5. Repete 2-4 para múltiplos itens",
+        "6. Seleciona forma de pagamento(s)",
+        "7. Confirma venda → estoque decrementado → fluxo de caixa atualizado",
+        "8. Comprovante exibido para impressão/envio"
+      ],
+      "states": {
+        "loading": "Skeleton na busca de produto",
+        "error": "Produto não encontrado → sugestão de cadastrar",
+        "empty": "Sacola vazia com CTA 'Adicionar produto'"
+      }
+    },
+    {
+      "id": "INT-2",
+      "trigger": "Lojista cadastra novo produto com variantes",
+      "flow": [
+        "1. Formulário de produto: nome, marca, fornecedor, descrição",
+        "2. Adiciona variantes: seleciona cores em paleta visual, marca UV e polarizado",
+        "3. Define custo e preço de venda por variante (margem calculada ao vivo)",
+        "4. Upload de fotos por variante",
+        "5. Define estoque inicial por variante",
+        "6. Salva — produto disponível no PDV imediatamente"
+      ],
+      "states": {
+        "loading": "Preview de margem atualizado em tempo real",
+        "error": "Validação inline: SKU duplicado, margem negativa (aviso)",
+        "empty": "Wizard guiado para primeiro produto da loja"
+      }
+    }
+  ],
+
+  "edgeCases": [
+    {
+      "id": "EC-1",
+      "scenario": "Operador tenta finalizar venda mas variante está com estoque zerado",
+      "handling": "Bloquear finalização, exibir aviso 'Estoque insuficiente para [Produto — Variante]'",
+      "severity": "critical"
+    },
+    {
+      "id": "EC-2",
+      "scenario": "Conexão cai durante registro de venda",
+      "handling": "Estado pendente; ao reconectar, tentar reprocessar; se falhar, exibir 'Venda não confirmada — verifique o estoque manualmente'",
+      "severity": "high"
+    },
+    {
+      "id": "EC-3",
+      "scenario": "Custo de aquisição não informado ao cadastrar variante",
+      "handling": "Permitir salvar com custo zerado mas exibir banner de aviso 'Margem não calculável — adicione o custo de aquisição'",
+      "severity": "medium"
+    },
+    {
+      "id": "EC-4",
+      "scenario": "Lojista tenta excluir produto que possui vendas históricas",
+      "handling": "Bloquear exclusão física; oferecer 'Arquivar produto' (soft delete) para manter integridade do histórico",
+      "severity": "high"
+    }
+  ],
+
+  "terminology": [
+    {
+      "term": "Variante",
+      "definition": "Combinação única de atributos de um óculos: cor_armação + cor_lente + uv + polarizado. Cada variante tem SKU, preço e estoque próprios.",
+      "synonyms": ["SKU", "versão"],
+      "avoid": ["produto filho", "sub-produto"]
+    },
+    {
+      "term": "Giro",
+      "definition": "Velocidade com que um produto/variante é vendido. Alto giro = vende rápido. Baixo giro = produto parado.",
+      "synonyms": ["rotatividade", "velocidade de vendas"],
+      "avoid": []
+    },
+    {
+      "term": "Margem Bruta",
+      "definition": "(Preço de Venda - Custo de Aquisição) / Preço de Venda * 100. Não considera despesas operacionais.",
+      "synonyms": ["margem", "MB"],
+      "avoid": ["margem líquida", "lucro líquido"]
+    },
+    {
+      "term": "PDV",
+      "definition": "Ponto de Venda — tela de registro de vendas da loja física.",
+      "synonyms": ["caixa", "checkout"],
+      "avoid": []
+    },
+    {
+      "term": "Estoque parado",
+      "definition": "Variante sem nenhuma venda nos últimos 60 dias. Representa capital imobilizado.",
+      "synonyms": ["dead stock", "obsoleto"],
+      "avoid": []
+    }
+  ],
+
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Quantos usuários simultâneos? Quais perfis de acesso?",
+      "status": "RESOLVED",
+      "answer": "1 perfil único (dono) — sem permissões granulares no MVP",
+      "blocking": false
+    },
+    {
+      "id": "OQ-2",
+      "question": "Existe necessidade de funcionamento offline?",
+      "status": "RESOLVED",
+      "answer": "Não — internet sempre disponível, web app puro",
+      "blocking": false
+    },
+    {
+      "id": "OQ-3",
+      "question": "Qual dispositivo para o PDV?",
+      "status": "RESOLVED",
+      "answer": "Responsivo — PC desktop-first + suporte a tablet touchscreen",
+      "blocking": false
+    },
+    {
+      "id": "OQ-4",
+      "question": "NF-e é requisito no MVP?",
+      "status": "RESOLVED",
+      "answer": "Não — fora do MVP; modelagem deve prever extensibilidade",
+      "blocking": false
+    },
+    {
+      "id": "OQ-5",
+      "question": "Existe histórico de dados para migrar (produtos, clientes)?",
+      "status": "OPEN",
+      "blocking": false,
+      "assignedTo": "@pm",
+      "priority": "low",
+      "impact": "Pode exigir feature de importação CSV; afeta cronograma de go-live"
+    }
+  ]
+}

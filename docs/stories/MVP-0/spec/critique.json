@@ -1,0 +1,122 @@
+{
+  "storyId": "MVP-0",
+  "critiquedAt": "2026-05-13T09:10:00Z",
+  "critiquedBy": "@qa",
+  "specVersion": 1,
+
+  "verdict": "APPROVED",
+  "verdictReason": "Spec de alta qualidade (4.55/5.0). Todos os 12 FRs cobertos com rastreabilidade explícita. Stack validada pelo @architect. Operação crítica (createSale) documentada com snippet executável. 4 issues resolvidos via auto-fix; CRIT-3 resolvido manualmente em 2026-05-13 com Opção B (Static API Key via X-API-Key header + src/middleware.ts + CON-5). Zero issues abertos. Nenhum blocker. Pronto para implementação.",
+
+  "scores": {
+    "accuracy": 5.0,
+    "completeness": 4.0,
+    "consistency": 4.0,
+    "feasibility": 5.0,
+    "alignment": 5.0,
+    "average": 4.55
+  },
+
+  "issues": [
+    {
+      "id": "CRIT-1",
+      "severity": "MEDIUM",
+      "category": "completeness",
+      "check": "comp-2",
+      "description": "FR-6, FR-7, FR-10, FR-12 (P1/P2) não possuíam cenários de teste explícitos na Seção 6.3",
+      "location": "spec.md#section-6",
+      "suggestion": "Adicionados 4 cenários Gherkin (FR-6 CRM, FR-7 Supplier, FR-10 QR Code, FR-12 Export) na Seção 6.3",
+      "autoFixable": true,
+      "status": "FIXED"
+    },
+    {
+      "id": "CRIT-2",
+      "severity": "LOW",
+      "category": "completeness",
+      "check": "comp-3",
+      "description": "shadcn/ui listada com versão 'latest' — não determinística",
+      "location": "spec.md#section-4",
+      "suggestion": "Clarificado: componentes shadcn/ui são copiados via CLI para src/components/ui/ e versionados internamente — sem dependência de versão externa",
+      "autoFixable": true,
+      "status": "FIXED"
+    },
+    {
+      "id": "CRIT-3",
+      "severity": "MEDIUM",
+      "category": "completeness",
+      "check": "comp-2",
+      "description": "Mecanismo de autenticação para app/api/v1/ (e-commerce bridge) não especificado. Endpoints públicos representam risco de exposição de dados do negócio (estoque, clientes, preços).",
+      "location": "spec.md#section-5-epic4",
+      "suggestion": "Adicionar sub-seção 3.5 'API Security' definindo: (a) JWT de sessão (mesmo do backoffice), (b) API key estática para e-commerce, ou (c) público com rate limiting no MVP. Decisão de produto necessária antes da implementação do Epic 4.",
+      "autoFixable": false,
+      "status": "FIXED — Opção B (Static API Key) adotada em 2026-05-13 por @pm",
+      "resolution": "Section 3.5 adicionada ao spec.md: X-API-Key header + src/middleware.ts + ECOMMERCE_API_KEY em .env.local.example; CON-5 adicionado ao requirements.json"
+    },
+    {
+      "id": "CRIT-4",
+      "severity": "MEDIUM",
+      "category": "consistency",
+      "check": "con-4",
+      "description": ".env.local listado como arquivo a criar — credenciais nunca devem ser commitadas em git",
+      "location": "spec.md#section-5-infra",
+      "suggestion": "Substituído por .env.local.example com nota explícita de não commitar .env.local",
+      "autoFixable": true,
+      "status": "FIXED"
+    },
+    {
+      "id": "CRIT-5",
+      "severity": "LOW",
+      "category": "consistency",
+      "check": "consistency",
+      "description": "analytics.service.ts e export.service.ts ausentes do diagrama ASCII da Seção 3.2",
+      "location": "spec.md#section-3-2",
+      "suggestion": "Ambos adicionados ao diagrama de arquitetura da Feature Services Layer",
+      "autoFixable": true,
+      "status": "FIXED"
+    }
+  ],
+
+  "summary": {
+    "highIssues": 0,
+    "mediumIssues": 3,
+    "lowIssues": 2,
+    "autoFixed": 4,
+    "manualFixed": 1,
+    "openIssues": 0,
+    "specQualityRating": "HIGH"
+  },
+
+  "autoFixes": [
+    {
+      "issueId": "CRIT-1",
+      "location": "spec.md#section-6-3",
+      "action": "Adicionados cenários Gherkin para FR-6, FR-7, FR-10, FR-12"
+    },
+    {
+      "issueId": "CRIT-2",
+      "location": "spec.md#section-4-1",
+      "action": "shadcn/ui: clarificado como componentes copiados via CLI, sem versão externa"
+    },
+    {
+      "issueId": "CRIT-4",
+      "location": "spec.md#section-5-1",
+      "action": ".env.local → .env.local.example com nota de segurança"
+    },
+    {
+      "issueId": "CRIT-5",
+      "location": "spec.md#section-3-2",
+      "action": "analytics.service.ts e export.service.ts adicionados ao diagrama de arquitetura"
+    }
+  ],
+
+  "positiveFindings": [
+    "Rastreabilidade exemplar: todas as 20+ declarações técnicas apontam para FR-*/NFR-*/CON-*/ASM-* — Article IV gate impecável",
+    "Operação crítica createSale() documentada com snippet TypeScript executável e comentários linha-a-linha — @dev pode implementar sem ambiguidade",
+    "Domain model com 9 entidades bem definidas e decisões de schema todas justificadas (Decimal para dinheiro, append-only para audit trail, soft delete para integridade)",
+    "7 riscos identificados com probabilidade, impacto e mitigação — demonstra consciência dos pontos frágeis do sistema",
+    "Alinhamento perfeito com preset nextjs-react (5/5) — zero desvios das convenções estabelecidas"
+  ],
+
+  "nextAction": "Spec APPROVED. Todos os issues resolvidos (CRIT-3 fechado com Opção B — Static API Key em 2026-05-13). Nenhum blocker ativo. Próximo passo: @sm *draft para criar stories do Epic 1.",
+
+  "pipelineNextPhase": "@sm *draft (stories do Epic 1)"
+}

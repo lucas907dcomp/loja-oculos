@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// DM-1: Supplier
+model Supplier {
+  id          String    @id @default(cuid())
+  name        String
+  cnpj        String?
+  contactName String?
+  leadTimeDays Int      @default(7)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// DM-2: Product (soft delete via isArchived)
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  brand       String
+  description String?
+  isArchived  Boolean          @default(false)
+  supplierId  String?
+  supplier    Supplier?        @relation(fields: [supplierId], references: [id])
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+// DM-3: ProductVariant — Decimal(10,2) for monetary fields per CON-3
+model ProductVariant {
+  id           String     @id @default(cuid())
+  sku          String     @unique
+  frameColor   String
+  lensColor    String
+  uvProtection String
+  isPolarized  Boolean    @default(false)
+  costPrice    Decimal    @db.Decimal(10, 2)
+  salePrice    Decimal    @db.Decimal(10, 2)
+  images       String[]
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  inventory    Inventory?
+  saleItems    SaleItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// DM-4: Inventory
+model Inventory {
+  id            String                 @id @default(cuid())
+  quantity      Int                    @default(0)
+  minStockAlert Int                    @default(3)
+  variantId     String                 @unique
+  variant       ProductVariant         @relation(fields: [variantId], references: [id])
+  transactions  InventoryTransaction[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+// DM-5: InventoryTransaction — append-only audit trail
+model InventoryTransaction {
+  id            String    @id @default(cuid())
+  type          TxType
+  quantityDelta Int
+  note          String?
+  inventoryId   String
+  inventory     Inventory @relation(fields: [inventoryId], references: [id])
+  createdAt     DateTime  @default(now())
+}
+
+enum TxType {
+  SALE
+  PURCHASE
+  RETURN
+  EXCHANGE
+  ADJUSTMENT
+}
+
+// DM-6: Customer
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  tags      String[]
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// DM-7: Sale — paymentBreakdown as Json for split-payment flexibility
+model Sale {
+  id               String         @id @default(cuid())
+  totalAmount      Decimal        @db.Decimal(10, 2)
+  paymentBreakdown Json
+  status           SaleStatus     @default(COMPLETED)
+  refNfe           String?
+  customerId       String?
+  customer         Customer?      @relation(fields: [customerId], references: [id])
+  items            SaleItem[]
+  cashFlowEntry    CashFlowEntry?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+  RETURNED
+}
+
+// DM-8: SaleItem — snapshot unitPrice/unitCost at time of sale
+model SaleItem {
+  id        String         @id @default(cuid())
+  quantity  Int
+  unitPrice Decimal        @db.Decimal(10, 2)
+  unitCost  Decimal        @db.Decimal(10, 2)
+  saleId    String
+  sale      Sale           @relation(fields: [saleId], references: [id])
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  createdAt DateTime       @default(now())
+}
+
+// DM-9: CashFlowEntry
+model CashFlowEntry {
+  id        String        @id @default(cuid())
+  type      CashFlowType
+  amount    Decimal       @db.Decimal(10, 2)
+  note      String?
+  date      DateTime      @default(now())
+  saleId    String?       @unique
+  sale      Sale?         @relation(fields: [saleId], references: [id])
+  createdAt DateTime      @default(now())
+}
+
+enum CashFlowType {
+  INCOME
+  EXPENSE
+}

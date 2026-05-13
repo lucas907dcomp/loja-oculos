@@ -1,0 +1,21 @@
+﻿handoff:
+  from_agent: "pm"
+  to_agent: "architect"
+  timestamp: "2026-05-13T08:35:00Z"
+  consumed: false
+  story_context:
+    story_id: "MVP-0"
+    story_path: "docs/stories/MVP-0/spec/requirements.json"
+    story_status: "spec-gather-complete"
+    current_task: "Phase 2 - Assess + Stack + DB modeling"
+    branch: "N/A (greenfield)"
+  decisions:
+    - "1 perfil único (dono) — sem RBAC no MVP"
+    - "Web app puro — sem offline, sem PWA complexo"
+    - "PDV responsivo — desktop-first + suporte tablet"
+    - "NF-e fora do MVP — reservar campo ref_nfe em Sale"
+    - "12 FRs levantados (5 core P0 + 7 PM suggestions P1/P2)"
+  files_modified:
+    - "docs/stories/MVP-0/spec/requirements.json"
+  blockers: []
+  next_action: "Assess complexity, propose stack (total freedom), design system architecture, draft DB schema (Product -> Variants -> Inventory)"

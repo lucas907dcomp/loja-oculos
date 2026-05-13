@@ -1,0 +1,24 @@
+﻿handoff:
+  from_agent: "architect"
+  to_agent: "pm"
+  timestamp: "2026-05-13T08:50:00Z"
+  consumed: false
+  story_context:
+    story_id: "MVP-0"
+    story_path: "docs/stories/MVP-0/spec/"
+    story_status: "spec-assess-complete"
+    current_task: "write-spec — consolidar requirements + architecture em spec.md formal"
+    branch: "N/A (greenfield)"
+  decisions:
+    - "Stack: Next.js 16+ + TypeScript + Prisma + PostgreSQL (Neon) + shadcn/ui + Zustand"
+    - "Padrão: Monólito Modular com feature-based structure"
+    - "ACID obrigatório: prisma.$transaction() para sale → inventory → cashflow"
+    - "Decimal.js para todos campos monetários — zero Float"
+    - "API /api/v1/ como e-commerce bridge desde o início"
+    - "Complexidade COMPLEX (16/25) — recomenda 4 epics"
+  files_modified:
+    - "docs/stories/MVP-0/spec/requirements.json"
+    - "docs/stories/MVP-0/spec/complexity.json"
+    - "docs/stories/MVP-0/spec/architecture-decision.json"
+  blockers: []
+  next_action: "Executar *write-spec: consolidar requirements.json + complexity.json + architecture-decision.json em spec.md formal para o sistema"
