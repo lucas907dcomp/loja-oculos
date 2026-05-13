@@ -1,0 +1,62 @@
+schema: 1
+story: '1.2'
+gate: CONCERNS
+status_reason: >
+  All 10 acceptance criteria met; auth implementation is correct and secure for MVP scope.
+  Two non-blocking findings tracked: missing unit tests for the authorize() function and
+  absence of rate limiting on the login endpoint (acceptable for MVP, required before production).
+reviewer: Quinn
+updated: '2026-05-13T00:00:00Z'
+top_issues:
+  - id: 'TEST-001'
+    severity: medium
+    finding: 'No unit tests for authorize() in src/lib/auth.ts or login form behavior'
+    suggested_action: >
+      Add unit tests for: (1) authorize() with valid credentials, invalid email, invalid
+      password, missing ADMIN_PASSWORD_HASH; (2) LoginForm renders error message when
+      error prop is provided. Consider adding these in Story 1.3 or a dedicated test story.
+
+  - id: 'SEC-002'
+    severity: medium
+    finding: 'No rate limiting on /api/auth/callback/credentials — brute-force risk in production'
+    suggested_action: >
+      Add rate limiting middleware (e.g., next-rate-limit or Vercel Edge Middleware) before
+      production deployment. Track as a pre-production hardening item outside MVP scope.
+
+  - id: 'SEC-003'
+    severity: low
+    finding: >
+      Timing oracle in authorize(): email mismatch returns before bcrypt.compare() runs,
+      creating a fast-path vs slow-path timing difference that could confirm a valid admin email.
+    suggested_action: >
+      Low risk for single-admin system where email is not a secret. For production hardening,
+      consider running bcrypt.compare() against a dummy hash even on email mismatch to normalize
+      response time.
+
+  - id: 'MNT-001'
+    severity: low
+    finding: >
+      setIsLoading(false) in login-form.tsx onSubmit is unreachable on success because
+      signIn('credentials', { callbackUrl }) redirects before the line executes.
+    suggested_action: >
+      Cosmetic — no functional impact. Could clean up with a try/finally pattern if desired,
+      but not worth a fix in isolation.
+
+waiver: { active: false }
+
+# --- AC Traceability ---
+# AC-1: PASS — auth.ts uses Credentials provider, validates ADMIN_EMAIL + ADMIN_PASSWORD_HASH,
+#         bcrypt.compare() called correctly; authorize() returns null on all failure paths.
+# AC-2: PASS — route.ts re-exports handlers.GET/POST; runtime='nodejs' set; session.strategy='jwt',
+#         maxAge=604800 (7 days).
+# AC-3: PASS — login page renders email + password fields; zod: email().min(1) + string().min(8);
+#         react-hook-form + zodResolver wired.
+# AC-4: PASS — callbackUrl='/dashboard' on success; error prop shows "Email ou senha inválidos"
+#         without field-level disclosure.
+# AC-5: PASS — BackofficeLayout is async Server Component; auth() called; redirect('/login')
+#         before any RSC renders.
+# AC-6: PASS — sidebar.tsx has all 8 nav items in correct spec order with correct paths.
+# AC-7: PASS — .env.local.example has ADMIN_EMAIL + ADMIN_PASSWORD_HASH with generation comment.
+# AC-8: PASS — auth.contract.ts exports SessionUser and AuthSession types; barrel export in index.ts.
+# AC-9: PASS — Providers client component wraps SessionProvider; root layout uses <Providers>.
+# AC-10: PASS — dev starts clean; tsc 0 errors; lint 0 errors; 6/6 tests pass.
