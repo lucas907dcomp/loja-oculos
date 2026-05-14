@@ -1,0 +1,12 @@
+schema: 1
+story: '3.3'
+gate: CONCERNS
+status_reason: 'All 8 acceptance criteria met and 71/71 tests pass. One medium-severity performance concern (duplicate getSalesVelocity DB call) is non-blocking for MVP.'
+reviewer: 'Quinn'
+updated: '2026-05-14T14:35:00Z'
+top_issues:
+  - id: 'PERF-001'
+    severity: medium
+    finding: 'getSalesVelocity() is called twice per dashboard render — once inside getTopByTurnover() and once inside getCriticalStockouts() — both running concurrently via Promise.all in page.tsx. This causes saleItem.findMany to execute twice with identical parameters on every dashboard load.'
+    suggested_action: 'Refactor page.tsx to call getSalesVelocity() once and pass the velocity map as a parameter to both getCriticalStockouts and getTopByTurnover, or cache the result within the request scope.'
+waiver: { active: false }
