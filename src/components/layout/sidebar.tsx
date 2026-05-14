@@ -11,6 +11,7 @@ import {
   Users,
   Truck,
   DollarSign,
+  Tag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Vendas', href: '/vendas', icon: Receipt },
   { label: 'Clientes', href: '/clientes', icon: Users },
   { label: 'Fornecedores', href: '/fornecedores', icon: Truck },
+  { label: 'Etiquetas', href: '/etiquetas', icon: Tag },
   { label: 'Financeiro', href: '/financeiro', icon: DollarSign },
 ]
 
