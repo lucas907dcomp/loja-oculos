@@ -162,6 +162,15 @@ describe('SalesService.createSale', () => {
     ).rejects.toThrow('Carrinho não pode estar vazio')
   })
 
+  it('item quantity < 1 — throws Quantidade inválida', async () => {
+    await expect(
+      SalesService.createSale({
+        items: [{ variantId: 'var-1', quantity: 0 }],
+        paymentBreakdown: { pix: 0 },
+      }),
+    ).rejects.toThrow('Quantidade inválida')
+  })
+
   it('payment mismatch — throws Total do pagamento não cobre', async () => {
     const variant = makeVariant('var-1', '120.00', '50.00', 'inv-1', 5)
     mockPrisma.productVariant.findUniqueOrThrow.mockResolvedValue(variant)

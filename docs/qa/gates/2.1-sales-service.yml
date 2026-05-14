@@ -1,0 +1,106 @@
+schema: 1
+story: '2.1'
+story_title: 'Sales Service — Atomic Transaction'
+gate: CONCERNS
+status_reason: >
+  All 7 acceptance criteria fully implemented and verified. 31 tests passing (31 after QA refactoring).
+  Two medium-severity observations documented: (1) EC-1 race condition outside transaction — low
+  operational risk for single-store context; (2) getSaleById double type cast — no runtime impact.
+  Recommend proceeding to push.
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-05-14T00:00:00Z'
+
+top_issues:
+  - id: M-1
+    severity: medium
+    category: reliability
+    description: >
+      EC-1 stock check reads inventory.quantity outside $transaction. Two concurrent sales for the
+      same variant could both pass EC-1 and decrement stock below safe levels. No DB constraint
+      prevents negative inventory.quantity.
+    recommendation: >
+      Add pessimistic locking inside transaction OR add DB-level CHECK constraint via migration.
+      Low priority for single-store MVP; schedule for a dedicated hardening story.
+    suggested_owner: dev
+    refs:
+      - src/features/sales/services/sales.service.ts
+
+  - id: M-2
+    severity: medium
+    category: code
+    description: >
+      getSaleById uses `sale as unknown as SaleWithItems` double-cast. Prisma's include shape
+      doesn't exactly match SaleWithItems; TypeScript accepts the cast but bypasses type safety.
+    recommendation: >
+      Extract a mapPrismaSaleToContract() mapper function to make the shape conversion explicit
+      and type-safe. Can be deferred until the next story touches this method.
+    suggested_owner: dev
+    refs:
+      - src/features/sales/services/sales.service.ts
+
+  - id: L-1
+    severity: low
+    category: tests
+    description: >
+      getSaleHistory with date filters (from/to) is not tested at unit level. The filter path
+      is correct code but has no dedicated scenario.
+    recommendation: Add unit test for filter path; add integration test when integration test
+      suite is established.
+    suggested_owner: dev
+    refs:
+      - src/features/sales/__tests__/sales.service.test.ts
+
+waiver:
+  active: false
+
+quality_score: 80
+
+expires: '2026-05-28T00:00:00Z'
+
+evidence:
+  tests_reviewed: 31
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: >
+      No SQL injection (Prisma ORM). Server-side totalAmount. Typed paymentBreakdown DTO prevents
+      unknown fields. 'use server' directive applied. No sensitive data in error messages.
+  performance:
+    status: PASS
+    notes: >
+      Promise.all for parallel variant fetches. _count subquery for getSaleHistory (no N+1).
+      Single-query getSaleById with all includes.
+  reliability:
+    status: PASS
+    notes: >
+      NFR-3 atomicity verified: EC-1 fires before $transaction (test: $transaction not called on
+      stock insufficient). All 5 writes inside single $transaction callback. Rollback guaranteed
+      by Prisma on any step failure.
+  maintainability:
+    status: PASS
+    notes: >
+      Contract Pattern upheld (no Prisma imports in actions/pages). Static class pattern matches
+      inventory and products services. Barrel export follows established convention.
+
+recommendations:
+  immediate: []
+  future:
+    - action: >
+        Add pessimistic lock or DB CHECK constraint for inventory.quantity to prevent race condition
+        on concurrent sales (M-1).
+      refs:
+        - prisma/schema.prisma
+        - src/features/sales/services/sales.service.ts
+    - action: >
+        Extract mapPrismaSaleToContract() mapper to replace as-unknown-as cast in getSaleById (M-2).
+      refs:
+        - src/features/sales/services/sales.service.ts
+    - action: >
+        Add unit test for getSaleHistory with date filter parameters (L-1).
+      refs:
+        - src/features/sales/__tests__/sales.service.test.ts
