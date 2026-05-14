@@ -1,0 +1,34 @@
+storyId: "2.3"
+storyTitle: "Sales History + Returns"
+reviewedBy: "@qa (Quinn)"
+reviewedAt: "2026-05-14"
+verdict: PASS
+score: 98
+
+checks:
+  code_review: PASS
+  unit_tests: PASS
+  acceptance_criteria: PASS
+  no_regressions: PASS
+  performance: PASS
+  security: PASS
+  documentation: PASS
+
+issues:
+  - severity: low
+    category: docs
+    description: >
+      Dev Notes pseudocode in story file shows `amount: sale.totalAmount.toString()`
+      but actual implementation correctly uses `new Decimal(sale.totalAmount.toString()).toFixed(2)`.
+      Code is correct; story note is stale.
+    recommendation: No action required — code is correct. May update Dev Notes in a follow-up if desired.
+
+highlights:
+  - "Idempotency guard at line 164 fires BEFORE $transaction — no wasted DB round-trip on already-returned sales"
+  - "Prisma atomic increment `{ quantity: { increment: item.quantity } }` prevents inventory race condition"
+  - "Full DTO mapping in getSaleByIdAction — all Decimal fields serialized to string at action boundary"
+  - "Lazy fetch pattern in VendasClient — getSaleByIdAction called on row click, not at page load"
+  - "useTransition wraps returnSaleAction — isPending disables button, prevents double-submit"
+  - "47/47 tests passing; 0 TypeScript errors; 0 lint errors"
+
+next: "@devops push Stories 2.1, 2.2, 2.3 to remote"
