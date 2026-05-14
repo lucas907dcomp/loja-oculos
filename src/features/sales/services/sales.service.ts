@@ -157,4 +157,57 @@ export class SalesService {
 
     return sale as unknown as SaleWithItems
   }
+
+  static async processReturn(saleId: string): Promise<SaleWithItems> {
+    const sale = await SalesService.getSaleById(saleId)
+
+    if (sale.status !== 'COMPLETED') {
+      throw new Error('Venda já foi devolvida')
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.sale.update({ where: { id: saleId }, data: { status: 'RETURNED' } })
+
+      for (const item of sale.items) {
+        const inv = await tx.inventory.findUniqueOrThrow({ where: { variantId: item.variantId } })
+
+        await tx.inventory.update({
+          where: { id: inv.id },
+          data: { quantity: { increment: item.quantity } },
+        })
+
+        await tx.inventoryTransaction.create({
+          data: {
+            inventoryId: inv.id,
+            type: 'RETURN',
+            quantityDelta: item.quantity,
+            note: null,
+          },
+        })
+      }
+
+      await tx.cashFlowEntry.create({
+        data: {
+          type: 'EXPENSE',
+          amount: new Decimal(sale.totalAmount.toString()).toFixed(2),
+          saleId,
+        },
+      })
+
+      return tx.sale.findUniqueOrThrow({
+        where: { id: saleId },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: { product: { select: { name: true } } },
+              },
+            },
+          },
+          customer: true,
+          cashFlowEntry: true,
+        },
+      }) as Promise<SaleWithItems>
+    })
+  }
 }
