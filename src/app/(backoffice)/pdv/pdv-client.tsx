@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import Decimal from 'decimal.js'
 import { useCartStore, selectTotal } from '@/features/sales'
 import { createSaleAction } from '@/features/sales/actions'
+import { searchCustomersAction } from '@/features/customers/actions'
 import type { ProductWithVariants } from '@/features/products'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +29,55 @@ export function PdvClient({ products }: Props) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  // Customer search — independent transition so it doesn't block the sale confirm state
+  const [customerQuery, setCustomerQuery] = useState('')
+  const [customerResults, setCustomerResults] = useState<{ id: string; name: string; phone: string | null }[]>([])
+  const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(null)
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const [, startSearchTransition] = useTransition()
+  const customerInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (customerInputRef.current && !customerInputRef.current.closest('[data-customer-search]')?.contains(e.target as Node)) {
+        setShowCustomerDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function handleCustomerSearch(q: string) {
+    setCustomerQuery(q)
+    setSelectedCustomer(null)
+    if (q.length < 2) {
+      setCustomerResults([])
+      setShowCustomerDropdown(false)
+      return
+    }
+    startSearchTransition(async () => {
+      const result = await searchCustomersAction(q)
+      if (result.success) {
+        setCustomerResults(result.customers)
+        setShowCustomerDropdown(true)
+      }
+    })
+  }
+
+  function handleSelectCustomer(c: { id: string; name: string; phone: string | null }) {
+    setSelectedCustomer({ id: c.id, name: c.name })
+    setCustomerQuery(c.name)
+    setShowCustomerDropdown(false)
+    setCustomerResults([])
+  }
+
+  function clearCustomer() {
+    setSelectedCustomer(null)
+    setCustomerQuery('')
+    setCustomerResults([])
+    setShowCustomerDropdown(false)
+  }
 
   const totalStr = total.toFixed(2)
 
@@ -60,6 +110,7 @@ export function PdvClient({ products }: Props) {
     setUserEditedPayment(false)
     setSuccessMessage(null)
     setErrorMessage(null)
+    clearCustomer()
   }
 
   function handleConfirm() {
@@ -76,12 +127,14 @@ export function PdvClient({ products }: Props) {
           cardDebit: effectiveBreakdown.cardDebit,
           cash: effectiveBreakdown.cash,
         },
+        customerId: selectedCustomer?.id,
       })
 
       if (result.success) {
         setSuccessMessage(`Venda registrada! ID: ${result.saleId}`)
         clearCart()
         setUserEditedPayment(false)
+        clearCustomer()
       } else {
         setErrorMessage(result.error)
       }
@@ -228,6 +281,51 @@ export function PdvClient({ products }: Props) {
             <span>{formatBRL(total)}</span>
           </div>
         )}
+
+        <div className="h-px bg-border" />
+
+        {/* Customer search (optional) */}
+        <div className="flex flex-col gap-1" data-customer-search>
+          <Label className="text-sm font-semibold">Cliente (opcional)</Label>
+          <div className="relative" data-customer-search>
+            <div className="flex gap-1">
+              <Input
+                ref={customerInputRef}
+                placeholder="Buscar cliente (mín. 2 caracteres)..."
+                value={customerQuery}
+                onChange={(e) => handleCustomerSearch(e.target.value)}
+                onFocus={() => customerResults.length > 0 && setShowCustomerDropdown(true)}
+                className="h-8 text-sm"
+                data-customer-search
+              />
+              {selectedCustomer && (
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-muted-foreground shrink-0" onClick={clearCustomer}>
+                  ✕
+                </Button>
+              )}
+            </div>
+            {selectedCustomer && (
+              <Badge variant="outline" className="mt-1 text-xs">
+                {selectedCustomer.name}
+              </Badge>
+            )}
+            {showCustomerDropdown && customerResults.length > 0 && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-md">
+                {customerResults.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex flex-col"
+                    onClick={() => handleSelectCustomer(c)}
+                  >
+                    <span className="font-medium">{c.name}</span>
+                    {c.phone && <span className="text-xs text-muted-foreground">{c.phone}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="h-px bg-border" />
 
