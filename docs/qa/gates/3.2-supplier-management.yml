@@ -1,0 +1,54 @@
+schema: 1
+story: '3.2'
+story_title: 'Gestão de Fornecedores (Supplier Management)'
+gate: PASS
+status_reason: 'All 8 acceptance criteria fully implemented and verified. No CRITICAL or HIGH issues found. Migration is additive-only with no data loss risk. Four independent useTransition hooks correctly implemented per @po S-1 fix.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-05-14T13:58:00.000Z'
+
+top_issues: []
+waiver:
+  active: false
+
+quality_score: 95
+expires: '2026-05-28T13:58:00.000Z'
+
+evidence:
+  tests_reviewed: 7
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No Prisma in Client Components. All mutations via Server Actions with use server directive. Prisma parameterized queries. No sensitive data in DTOs.'
+  performance:
+    status: PASS
+    notes: '_count aggregation avoids N+1 in getSuppliers. Single query with includes in getSupplierById. Client-side search avoids per-keystroke server requests.'
+  reliability:
+    status: PASS
+    notes: 'All actions wrapped in try/catch with typed error returns. page.tsx has RSC error fallback. revalidatePath called on all mutations.'
+  maintainability:
+    status: PASS
+    notes: 'Static class pattern consistent with CustomerService (Story 3.1). Clean contract file separates Prisma types from DTOs. Barrel export from index.ts.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Add unit test for getSupplierById happy path (products + variantCount mapping, PO mapping)'
+      refs: ['src/features/suppliers/__tests__/supplier.service.test.ts']
+      suggested_owner: dev
+    - action: 'Add unit test for getSupplierById not-found throws'
+      refs: ['src/features/suppliers/__tests__/supplier.service.test.ts']
+      suggested_owner: dev
+    - action: 'Add unit test for updatePurchaseOrderStatus PO not-found case'
+      refs: ['src/features/suppliers/__tests__/supplier.service.test.ts']
+      suggested_owner: dev
+    - action: 'Add unit test for updateSupplier happy path'
+      refs: ['src/features/suppliers/__tests__/supplier.service.test.ts']
+      suggested_owner: dev
+    - action: 'Consider displaying error when profile refresh fails after handleMarkDelivered'
+      refs: ['src/app/(backoffice)/fornecedores/fornecedores-client.tsx']
+      suggested_owner: dev
