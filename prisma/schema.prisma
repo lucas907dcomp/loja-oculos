@@ -10,14 +10,34 @@ datasource db {
 
 // DM-1: Supplier
 model Supplier {
-  id          String    @id @default(cuid())
-  name        String
-  cnpj        String?
-  contactName String?
-  leadTimeDays Int      @default(7)
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String          @id @default(cuid())
+  name           String
+  cnpj           String?
+  contactName    String?
+  phone          String?
+  email          String?
+  leadTimeDays   Int             @default(7)
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+// DM-8-ext: PurchaseOrder — FR-7 AC-7.3
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  supplierId  String
+  supplier    Supplier            @relation(fields: [supplierId], references: [id])
+  status      PurchaseOrderStatus @default(REQUESTED)
+  notes       String?
+  deliveredAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+enum PurchaseOrderStatus {
+  REQUESTED
+  DELIVERED
 }
 
 // DM-2: Product (soft delete via isArchived)
