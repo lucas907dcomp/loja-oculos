@@ -2,7 +2,7 @@
   from_agent: "pm"
   to_agent: "qa"
   timestamp: "2026-05-13T09:00:00Z"
-  consumed: false
+  consumed: true
   story_context:
     story_id: "MVP-0"
     story_path: "docs/stories/MVP-0/spec/spec.md"
