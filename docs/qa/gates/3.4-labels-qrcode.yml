@@ -1,0 +1,20 @@
+schema: 1
+story: '3.4'
+gate: PASS
+status_reason: 'All 10 acceptance criteria met. LabelService correctly guards empty variantIds, filters isArchived, converts Decimal with Number(), and batches QR generation via Promise.all. 75/75 tests passing.'
+reviewer: 'Quinn'
+updated: '2026-05-14T15:30:00Z'
+top_issues:
+  - id: 'TEST-001'
+    severity: low
+    finding: 'getVariantLabels test does not assert that product.isArchived: false is included in the Prisma where clause. Implementation is correct but this constraint is untested for the variant-based method.'
+    suggested_action: 'Add toHaveBeenCalledWith assertion for isArchived filter in getVariantLabels test in a future story.'
+  - id: 'MNT-001'
+    severity: low
+    finding: 'QR generation logic (~12 lines) is duplicated between getVariantLabels and getProductLabels. getProductLabels could delegate internally to getVariantLabels.'
+    suggested_action: 'Refactor getProductLabels to call getVariantLabels internally after fetching variant IDs. Low priority for MVP.'
+  - id: 'UI-001'
+    severity: low
+    finding: 'The <label> element for the copies input in etiquetas-client.tsx is not associated with its <input> via htmlFor/id — minor accessibility gap.'
+    suggested_action: 'Add id to the input and htmlFor to the label to satisfy WCAG 1.3.1.'
+waiver: { active: false }
