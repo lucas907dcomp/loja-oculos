@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { CreateSaleDTO, PaymentBreakdown } from './sales.contract'
+import type { CreateSaleDTO, CreateSaleItemDTO, PaymentBreakdown } from './sales.contract'
 import { SalesService } from './services/sales.service'
 
 export async function createSaleAction(
@@ -94,6 +94,23 @@ export async function returnSaleAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao processar devolução',
+    }
+  }
+}
+
+export async function exchangeSaleAction(
+  saleId: string,
+  newItems: CreateSaleItemDTO[],
+): Promise<{ success: true; saleId: string } | { success: false; error: string }> {
+  try {
+    const sale = await SalesService.processExchange(saleId, newItems)
+    revalidatePath('/vendas')
+    revalidatePath('/estoque')
+    return { success: true, saleId: sale.id }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro ao processar troca',
     }
   }
 }

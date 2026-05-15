@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Decimal from 'decimal.js'
 import type { SaleListItem } from '@/features/sales'
 import {
+  exchangeSaleAction,
   getSaleByIdAction,
   returnSaleAction,
   type SaleDetail,
@@ -25,8 +26,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+interface AvailableVariant {
+  id: string
+  sku: string
+  frameColor: string
+  lensColor: string
+  productName: string
+}
+
 interface Props {
   sales: SaleListItem[]
+  availableVariants: AvailableVariant[]
 }
 
 function formatBRL(value: string | number): string {
@@ -56,7 +66,7 @@ function StatusBadge({ status }: { status: 'COMPLETED' | 'CANCELLED' | 'RETURNED
   )
 }
 
-export function VendasClient({ sales }: Props) {
+export function VendasClient({ sales, availableVariants }: Props) {
   const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
@@ -65,10 +75,19 @@ export function VendasClient({ sales }: Props) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
+  const [exchangeOpen, setExchangeOpen] = useState(false)
+  const [exchangeItems, setExchangeItems] = useState<{ variantId: string; quantity: number }[]>([
+    { variantId: '', quantity: 1 },
+  ])
+  const [exchangeError, setExchangeError] = useState<string | null>(null)
+  const [isExchangePending, startExchangeTransition] = useTransition()
+
   async function handleRowClick(saleId: string) {
     setIsLoadingDetail(true)
     setDetailError(null)
     setReturnError(null)
+    setExchangeError(null)
+    setExchangeOpen(false)
     setSheetOpen(true)
     setSelectedSale(null)
 
@@ -88,6 +107,9 @@ export function VendasClient({ sales }: Props) {
       setSelectedSale(null)
       setReturnError(null)
       setDetailError(null)
+      setExchangeOpen(false)
+      setExchangeError(null)
+      setExchangeItems([{ variantId: '', quantity: 1 }])
     }
   }
 
@@ -106,6 +128,46 @@ export function VendasClient({ sales }: Props) {
         setReturnError(result.error)
       }
     })
+  }
+
+  function handleExchangeSubmit() {
+    if (!selectedSale || isExchangePending) return
+    const validItems = exchangeItems.filter((i) => i.variantId !== '')
+    if (validItems.length === 0) {
+      setExchangeError('Selecione ao menos um item para a troca.')
+      return
+    }
+    setExchangeError(null)
+
+    startExchangeTransition(async () => {
+      const result = await exchangeSaleAction(selectedSale.id, validItems)
+      if (result.success) {
+        setSheetOpen(false)
+        setSelectedSale(null)
+        setExchangeOpen(false)
+        setExchangeItems([{ variantId: '', quantity: 1 }])
+        setSuccessMessage(`Troca registrada — Venda ${result.saleId.slice(-8).toUpperCase()}`)
+        setTimeout(() => setSuccessMessage(null), 5000)
+      } else {
+        setExchangeError(result.error)
+      }
+    })
+  }
+
+  function addExchangeRow() {
+    setExchangeItems((prev) => [...prev, { variantId: '', quantity: 1 }])
+  }
+
+  function removeExchangeRow(index: number) {
+    setExchangeItems((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function updateExchangeRow(index: number, field: 'variantId' | 'quantity', value: string | number) {
+    setExchangeItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: field === 'quantity' ? Number(value) : value } : item,
+      ),
+    )
   }
 
   const paymentLabels: Record<string, string> = {
@@ -269,23 +331,114 @@ export function VendasClient({ sales }: Props) {
                 </div>
               </div>
 
-              {/* Return error */}
+              {/* Return / Exchange errors */}
               {returnError && (
                 <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
                   {returnError}
                 </div>
               )}
 
-              {/* Return button */}
-              {selectedSale.status === 'COMPLETED' && (
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  disabled={isPending}
-                  onClick={handleReturn}
-                >
-                  {isPending ? 'Processando...' : 'Registrar Devolução'}
-                </Button>
+              {/* Action buttons for COMPLETED sales */}
+              {selectedSale.status === 'COMPLETED' && !exchangeOpen && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    disabled={isPending || isExchangePending}
+                    onClick={handleReturn}
+                  >
+                    {isPending ? 'Processando...' : 'Registrar Devolução'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isPending || isExchangePending}
+                    onClick={() => {
+                      setExchangeOpen(true)
+                      setExchangeError(null)
+                      setExchangeItems([{ variantId: '', quantity: 1 }])
+                    }}
+                  >
+                    Registrar Troca
+                  </Button>
+                </div>
+              )}
+
+              {/* Exchange form */}
+              {selectedSale.status === 'COMPLETED' && exchangeOpen && (
+                <div className="space-y-3 border rounded-md p-3">
+                  <h3 className="text-sm font-semibold">Itens de Substituição</h3>
+
+                  {exchangeItems.map((row, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <select
+                        className="flex-1 border rounded px-2 py-1.5 text-sm bg-background"
+                        value={row.variantId}
+                        onChange={(e) => updateExchangeRow(index, 'variantId', e.target.value)}
+                      >
+                        <option value="">Selecione um produto...</option>
+                        {availableVariants.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.productName} — {v.frameColor}/{v.lensColor} ({v.sku})
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        className="w-16 border rounded px-2 py-1.5 text-sm bg-background text-center"
+                        value={row.quantity}
+                        onChange={(e) => updateExchangeRow(index, 'quantity', e.target.value)}
+                      />
+                      {exchangeItems.length > 1 && (
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-destructive text-sm px-1"
+                          onClick={() => removeExchangeRow(index)}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground hover:text-foreground underline"
+                    onClick={addExchangeRow}
+                  >
+                    + Adicionar item
+                  </button>
+
+                  {exchangeError && (
+                    <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
+                      {exchangeError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      className="flex-1"
+                      disabled={isExchangePending}
+                      onClick={handleExchangeSubmit}
+                    >
+                      {isExchangePending ? 'Processando...' : 'Confirmar Troca'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="flex-1"
+                      disabled={isExchangePending}
+                      onClick={() => {
+                        setExchangeOpen(false)
+                        setExchangeError(null)
+                        setExchangeItems([{ variantId: '', quantity: 1 }])
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}

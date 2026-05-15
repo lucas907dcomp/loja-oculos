@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js'
 import { Prisma } from '@/generated/prisma/client'
 import { prisma } from '@/lib/prisma'
-import type { CreateSaleDTO, SaleListItem, SaleWithItems } from '../sales.contract'
+import type { CreateSaleDTO, CreateSaleItemDTO, SaleListItem, SaleWithItems } from '../sales.contract'
 
 export class SalesService {
   static async createSale(dto: CreateSaleDTO): Promise<SaleWithItems> {
@@ -193,6 +193,75 @@ export class SalesService {
           saleId,
         },
       })
+
+      return tx.sale.findUniqueOrThrow({
+        where: { id: saleId },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: { product: { select: { name: true } } },
+              },
+            },
+          },
+          customer: true,
+          cashFlowEntry: true,
+        },
+      }) as Promise<SaleWithItems>
+    })
+  }
+
+  static async processExchange(
+    saleId: string,
+    newItems: CreateSaleItemDTO[],
+  ): Promise<SaleWithItems> {
+    if (newItems.length === 0) throw new Error('Lista de itens da troca não pode estar vazia')
+
+    const sale = await SalesService.getSaleById(saleId)
+    if (sale.status !== 'COMPLETED') throw new Error('Venda já foi devolvida ou trocada')
+
+    const newVariantData = await Promise.all(
+      newItems.map((item) =>
+        prisma.productVariant.findUniqueOrThrow({
+          where: { id: item.variantId },
+          include: { product: { select: { name: true } }, inventory: true },
+        }),
+      ),
+    )
+    for (let i = 0; i < newItems.length; i++) {
+      const inv = newVariantData[i].inventory
+      if (!inv || inv.quantity < newItems[i].quantity) {
+        throw new Error(
+          `Estoque insuficiente para ${newVariantData[i].product.name} — ${newVariantData[i].sku}`,
+        )
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.sale.update({ where: { id: saleId }, data: { status: 'RETURNED' } })
+
+      for (const item of sale.items) {
+        const inv = await tx.inventory.findUniqueOrThrow({ where: { variantId: item.variantId } })
+        await tx.inventory.update({
+          where: { id: inv.id },
+          data: { quantity: { increment: item.quantity } },
+        })
+        await tx.inventoryTransaction.create({
+          data: { inventoryId: inv.id, type: 'RETURN', quantityDelta: item.quantity, note: null },
+        })
+      }
+
+      for (let i = 0; i < newItems.length; i++) {
+        const item = newItems[i]
+        const inv = newVariantData[i].inventory!
+        await tx.inventory.update({
+          where: { id: inv.id },
+          data: { quantity: { decrement: item.quantity } },
+        })
+        await tx.inventoryTransaction.create({
+          data: { inventoryId: inv.id, type: 'EXCHANGE', quantityDelta: -item.quantity, note: null },
+        })
+      }
 
       return tx.sale.findUniqueOrThrow({
         where: { id: saleId },

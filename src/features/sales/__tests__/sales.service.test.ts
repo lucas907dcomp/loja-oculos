@@ -281,6 +281,91 @@ describe('SalesService.processReturn', () => {
   })
 })
 
+describe('SalesService.processExchange', () => {
+  const makeSaleWithItems = (status: 'COMPLETED' | 'RETURNED' = 'COMPLETED') => ({
+    id: 'sale-exc-1',
+    totalAmount: { toString: () => '160.00' },
+    paymentBreakdown: { pix: 160 },
+    status,
+    createdAt: new Date(),
+    customerId: null,
+    customer: null,
+    cashFlowEntry: { id: 'cf-1', amount: { toString: () => '160.00' }, type: 'INCOME' },
+    items: [
+      {
+        id: 'si-1',
+        variantId: 'var-orig-1',
+        quantity: 2,
+        unitPrice: { toString: () => '80.00' },
+        unitCost: { toString: () => '30.00' },
+        variant: { sku: 'SKU-A', frameColor: 'Preto', lensColor: 'Cinza', product: { name: 'Óculos X' } },
+      },
+    ],
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockTx.sale.update.mockResolvedValue(undefined)
+    mockTx.inventory.update.mockResolvedValue(undefined)
+    mockTx.inventoryTransaction.create.mockResolvedValue(undefined)
+    mockTx.cashFlowEntry.create.mockResolvedValue(undefined)
+  })
+
+  it('happy path — original item returned (RETURN), new item decremented (EXCHANGE); no CashFlowEntry', async () => {
+    const sale = makeSaleWithItems('COMPLETED')
+    mockPrisma.sale.findUnique.mockResolvedValue(sale)
+    mockPrisma.productVariant.findUniqueOrThrow.mockResolvedValue(
+      makeVariant('var-new-1', '90.00', '35.00', 'inv-new-1', 5, 'Óculos Y', 'SKU-B'),
+    )
+    mockTx.inventory.findUniqueOrThrow.mockResolvedValue({ id: 'inv-orig-1', variantId: 'var-orig-1' })
+    mockTx.sale.findUniqueOrThrow.mockResolvedValue({ ...sale, status: 'RETURNED' })
+
+    await SalesService.processExchange('sale-exc-1', [{ variantId: 'var-new-1', quantity: 1 }])
+
+    expect(mockPrisma.$transaction).toHaveBeenCalledOnce()
+    expect(mockTx.sale.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: 'RETURNED' } }),
+    )
+    expect(mockTx.inventoryTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ type: 'RETURN', quantityDelta: 2 }) }),
+    )
+    expect(mockTx.inventoryTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ type: 'EXCHANGE', quantityDelta: -1 }) }),
+    )
+    expect(mockTx.cashFlowEntry.create).not.toHaveBeenCalled()
+  })
+
+  it('empty newItems — throws before $transaction is called', async () => {
+    await expect(SalesService.processExchange('sale-exc-1', [])).rejects.toThrow(
+      'Lista de itens da troca não pode estar vazia',
+    )
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('sale already RETURNED — throws before $transaction is called', async () => {
+    const sale = makeSaleWithItems('RETURNED')
+    mockPrisma.sale.findUnique.mockResolvedValue(sale)
+
+    await expect(
+      SalesService.processExchange('sale-exc-1', [{ variantId: 'var-new-1', quantity: 1 }]),
+    ).rejects.toThrow('Venda já foi devolvida ou trocada')
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('new item out of stock — throws before $transaction is called', async () => {
+    const sale = makeSaleWithItems('COMPLETED')
+    mockPrisma.sale.findUnique.mockResolvedValue(sale)
+    mockPrisma.productVariant.findUniqueOrThrow.mockResolvedValue(
+      makeVariant('var-new-1', '90.00', '35.00', 'inv-new-1', 0, 'Óculos Y', 'SKU-B'),
+    )
+
+    await expect(
+      SalesService.processExchange('sale-exc-1', [{ variantId: 'var-new-1', quantity: 1 }]),
+    ).rejects.toThrow('Estoque insuficiente')
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+})
+
 describe('SalesService.getSaleHistory', () => {
   beforeEach(() => vi.clearAllMocks())
 

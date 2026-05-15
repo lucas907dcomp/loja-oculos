@@ -1,3 +1,4 @@
+import { prisma } from '@/lib/prisma'
 import { SalesService } from '@/features/sales'
 import { VendasClient } from './vendas-client'
 
@@ -13,5 +14,20 @@ export default async function VendasPage() {
       </div>
     )
   }
-  return <VendasClient sales={sales} />
+
+  const variants = await prisma.productVariant.findMany({
+    where: { product: { isArchived: false } },
+    include: { product: { select: { name: true } } },
+    orderBy: [{ product: { name: 'asc' } }, { sku: 'asc' }],
+  })
+
+  const availableVariants = variants.map((v) => ({
+    id: v.id,
+    sku: v.sku,
+    frameColor: v.frameColor,
+    lensColor: v.lensColor,
+    productName: v.product.name,
+  }))
+
+  return <VendasClient sales={sales} availableVariants={availableVariants} />
 }
