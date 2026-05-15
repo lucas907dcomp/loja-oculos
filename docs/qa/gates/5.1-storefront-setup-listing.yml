@@ -1,0 +1,32 @@
+schema: 1
+story: '5.1'
+gate: PASS
+status_reason: >
+  All 10 acceptance criteria met. Headless BFF pattern is correct; ECOMMERCE_API_KEY
+  is server-side only (CON-7); ISR revalidate:300 configured (CON-6); 17 unit tests pass;
+  lint 0 errors; no NEXT_PUBLIC_ECOMMERCE_API_KEY anywhere in codebase.
+reviewer: Quinn
+updated: '2026-05-15T17:00:00Z'
+top_issues:
+  - id: PERF-001
+    severity: low
+    finding: >
+      src/app/(storefront)/loja/produtos/page.tsx:13 — when brand filter is active,
+      a third getProducts() call (all products, for brand list) runs serially after
+      the parallel pair. ISR at 300s absorbs the cost in practice, but could be
+      parallelized: Promise.all([getProducts(brand), getInventory(), getProducts()]).
+    suggested_action: Parallelize in a future cleanup or when listing is refactored for pagination
+  - id: MNT-001
+    severity: low
+    finding: >
+      src/features/storefront/components/product-card.tsx:62 — formatPrice(String(minPrice))
+      converts number→string then parseFloat(string)→number internally. Minor redundancy.
+    suggested_action: Pass minPrice directly to toLocaleString in a future cleanup
+  - id: TEST-001
+    severity: low
+    finding: >
+      Task 11 (visual browser check at /loja/produtos) remains unchecked — requires
+      manual npm run dev verification. All logic-level correctness is covered by
+      17 passing unit tests.
+    suggested_action: Verify visually before or during first @devops deployment
+waiver: { active: false }
