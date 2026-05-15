@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import type { CreateSaleDTO, CreateSaleItemDTO, PaymentBreakdown } from './sales.contract'
 import { SalesService } from './services/sales.service'
+import { buildReceipt } from './receipt.contract'
+import type { ReceiptData } from './receipt.contract'
 
 export async function createSaleAction(
   dto: CreateSaleDTO,
@@ -78,6 +80,20 @@ export async function getSaleByIdAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao carregar venda',
+    }
+  }
+}
+
+export async function getSaleForReceiptAction(
+  saleId: string,
+): Promise<{ success: true; receipt: ReceiptData } | { success: false; error: string }> {
+  try {
+    const sale = await SalesService.getSaleById(saleId)
+    return { success: true, receipt: buildReceipt(sale) }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro ao carregar comprovante',
     }
   }
 }

@@ -3,12 +3,14 @@
 import { useState, useTransition, useRef, useEffect } from 'react'
 import Decimal from 'decimal.js'
 import { useCartStore, selectTotal } from '@/features/sales'
-import { createSaleAction } from '@/features/sales/actions'
+import type { ReceiptData } from '@/features/sales'
+import { createSaleAction, getSaleForReceiptAction } from '@/features/sales/actions'
 import { searchCustomersAction } from '@/features/customers/actions'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SaleReceipt } from './sale-receipt'
 
 interface SerializedVariant {
   id: string
@@ -43,6 +45,7 @@ export function PdvClient({ products }: Props) {
     useCartStore()
   const total = new Decimal(useCartStore(selectTotal))
 
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   // userEditedPayment: true when the user has manually changed any payment field
   const [userEditedPayment, setUserEditedPayment] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -133,6 +136,15 @@ export function PdvClient({ products }: Props) {
     clearCustomer()
   }
 
+  function handleNewSale() {
+    setReceipt(null)
+    clearCart()
+    setUserEditedPayment(false)
+    setSuccessMessage(null)
+    setErrorMessage(null)
+    clearCustomer()
+  }
+
   function handleConfirm() {
     if (!isPaymentValid || isPending) return
     setErrorMessage(null)
@@ -151,10 +163,19 @@ export function PdvClient({ products }: Props) {
       })
 
       if (result.success) {
-        setSuccessMessage(`Venda registrada! ID: ${result.saleId}`)
-        clearCart()
-        setUserEditedPayment(false)
-        clearCustomer()
+        const receiptResult = await getSaleForReceiptAction(result.saleId)
+        if (receiptResult.success) {
+          setReceipt(receiptResult.receipt)
+          clearCart()
+          setUserEditedPayment(false)
+          clearCustomer()
+        } else {
+          // fallback: receipt unavailable, show text confirmation
+          setSuccessMessage(`Venda registrada! ID: ${result.saleId}`)
+          clearCart()
+          setUserEditedPayment(false)
+          clearCustomer()
+        }
       } else {
         setErrorMessage(result.error)
       }
@@ -163,8 +184,8 @@ export function PdvClient({ products }: Props) {
 
   return (
     <div className="flex gap-0 h-[calc(100vh-7rem)]">
-      {/* Left panel — Product list */}
-      <div className="flex-1 overflow-y-auto pr-4">
+      {/* Left panel — Product list; hidden on print when receipt is showing */}
+      <div className={`flex-1 overflow-y-auto pr-4${receipt ? ' print:hidden' : ''}`}>
         <h1 className="text-2xl font-semibold mb-4">PDV</h1>
         {products.length === 0 && (
           <p className="text-muted-foreground">Nenhum produto cadastrado.</p>
@@ -228,10 +249,14 @@ export function PdvClient({ products }: Props) {
       </div>
 
       {/* Vertical divider */}
-      <div className="w-px bg-border mx-4 shrink-0" />
+      <div className={`w-px bg-border mx-4 shrink-0${receipt ? ' print:hidden' : ''}`} />
 
-      {/* Right panel — Cart + Payment */}
+      {/* Right panel — Cart + Payment, or Receipt after successful sale */}
       <div className="w-80 flex flex-col gap-4 overflow-y-auto">
+        {receipt && (
+          <SaleReceipt receipt={receipt} onNewSale={handleNewSale} />
+        )}
+        {!receipt && (<>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Carrinho</h2>
           {items.length > 0 && (
@@ -413,6 +438,7 @@ export function PdvClient({ products }: Props) {
         >
           {isPending ? 'Processando…' : 'Confirmar Venda'}
         </Button>
+        </>)}
       </div>
     </div>
   )
