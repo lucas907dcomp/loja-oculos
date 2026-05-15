@@ -1,0 +1,38 @@
+schema: 1
+story: '4.1'
+gate: CONCERNS
+status_reason: >
+  All 10 acceptance criteria met; tests, typecheck, and lint clean.
+  Two non-blocking issues documented: partial CSV field escaping and unsafe tag-array cast in POST /customers.
+reviewer: Quinn
+updated: '2026-05-15T08:04:00Z'
+top_issues:
+  - id: MNT-001
+    severity: medium
+    finding: >
+      CSV rows only sanitize the `description` field (commas → semicolons).
+      Fields `product_name`, `brand`, `frame_color`, `lens_color`, and `uv_protection`
+      are written raw. A value containing a comma (e.g. "Black, Matte") will produce
+      a malformed CSV row that breaks downstream parsers.
+    suggested_action: >
+      Wrap all free-text CSV fields in RFC 4180 quoting or replace commas with
+      semicolons consistently before the e-commerce integration goes live.
+  - id: TEST-001
+    severity: low
+    finding: >
+      Route handlers (/products, /inventory, /customers) have no unit tests.
+      The POST /customers validation logic (invalid JSON → 400, missing name → 400)
+      is exercised only at the integration level.
+    suggested_action: >
+      Add lightweight route handler unit tests for the POST /customers validation
+      paths in a follow-up story or when expanding the test suite.
+  - id: MNT-002
+    severity: low
+    finding: >
+      `Array.isArray(data.tags) ? (data.tags as string[]) : []` in POST /customers
+      does not validate individual array elements as strings. A request with
+      `tags: [1, null, {}]` would bypass the cast and reach Prisma.
+    suggested_action: >
+      Add `.filter((t): t is string => typeof t === 'string')` when consuming the tags
+      array to ensure only string elements are persisted.
+waiver: { active: false }

@@ -5,14 +5,33 @@ import Decimal from 'decimal.js'
 import { useCartStore, selectTotal } from '@/features/sales'
 import { createSaleAction } from '@/features/sales/actions'
 import { searchCustomersAction } from '@/features/customers/actions'
-import type { ProductWithVariants } from '@/features/products'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+interface SerializedVariant {
+  id: string
+  sku: string
+  frameColor: string
+  lensColor: string
+  uvProtection: string
+  isPolarized: boolean
+  costPrice: number
+  salePrice: number
+  images: string[]
+  inventory: { quantity: number; minStockAlert: number } | null
+}
+
+interface SerializedProduct {
+  id: string
+  name: string
+  brand: string
+  variants: SerializedVariant[]
+}
+
 interface Props {
-  products: ProductWithVariants[]
+  products: SerializedProduct[]
 }
 
 function formatBRL(value: Decimal | number | string): string {
@@ -22,7 +41,7 @@ function formatBRL(value: Decimal | number | string): string {
 export function PdvClient({ products }: Props) {
   const { items, paymentBreakdown, addItem, removeItem, updateQuantity, setPaymentBreakdown, clearCart } =
     useCartStore()
-  const total = useCartStore(selectTotal)
+  const total = new Decimal(useCartStore(selectTotal))
 
   // userEditedPayment: true when the user has manually changed any payment field
   const [userEditedPayment, setUserEditedPayment] = useState(false)
@@ -37,10 +56,11 @@ export function PdvClient({ products }: Props) {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [, startSearchTransition] = useTransition()
   const customerInputRef = useRef<HTMLInputElement>(null)
+  const customerContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (customerInputRef.current && !customerInputRef.current.closest('[data-customer-search]')?.contains(e.target as Node)) {
+      if (!customerContainerRef.current?.contains(e.target as Node)) {
         setShowCustomerDropdown(false)
       }
     }
@@ -285,9 +305,9 @@ export function PdvClient({ products }: Props) {
         <div className="h-px bg-border" />
 
         {/* Customer search (optional) */}
-        <div className="flex flex-col gap-1" data-customer-search>
+        <div ref={customerContainerRef} className="flex flex-col gap-1">
           <Label className="text-sm font-semibold">Cliente (opcional)</Label>
-          <div className="relative" data-customer-search>
+          <div className="relative">
             <div className="flex gap-1">
               <Input
                 ref={customerInputRef}
@@ -296,7 +316,6 @@ export function PdvClient({ products }: Props) {
                 onChange={(e) => handleCustomerSearch(e.target.value)}
                 onFocus={() => customerResults.length > 0 && setShowCustomerDropdown(true)}
                 className="h-8 text-sm"
-                data-customer-search
               />
               {selectedCustomer && (
                 <Button size="sm" variant="ghost" className="h-8 px-2 text-muted-foreground shrink-0" onClick={clearCustomer}>

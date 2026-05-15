@@ -86,29 +86,28 @@ describe('selectTotal', () => {
     useCartStore.getState().clearCart()
   })
 
-  it('empty cart — returns Decimal(0)', () => {
+  it('empty cart — returns 0', () => {
     const total = selectTotal(useCartStore.getState())
-    expect(total.equals(new Decimal(0))).toBe(true)
+    expect(total).toBe(0)
   })
 
   it('single item — computes salePrice × quantity with Decimal precision', () => {
     useCartStore.getState().addItem(makeItem('var-1', '120.00'), 2)
     const total = selectTotal(useCartStore.getState())
-    expect(total.equals(new Decimal('240.00'))).toBe(true)
+    expect(total).toBe(240)
   })
 
   it('floating-point case — 0.1 × 1 + 0.2 × 1 = 0.30 (no floating-point error)', () => {
     useCartStore.getState().addItem(makeItem('var-1', '0.10'), 1)
     useCartStore.getState().addItem(makeItem('var-2', '0.20'), 1)
     const total = selectTotal(useCartStore.getState())
-    expect(total.toFixed(2)).toBe('0.30')
-    expect(total.equals(new Decimal('0.30'))).toBe(true)
+    expect(new Decimal(total).toFixed(2)).toBe('0.30')
   })
 
   it('multi-item — sums all items correctly', () => {
     useCartStore.getState().addItem(makeItem('var-1', '120.00'), 2)
     useCartStore.getState().addItem(makeItem('var-2', '80.00'), 1)
     const total = selectTotal(useCartStore.getState())
-    expect(total.equals(new Decimal('320.00'))).toBe(true)
+    expect(total).toBe(320)
   })
 })

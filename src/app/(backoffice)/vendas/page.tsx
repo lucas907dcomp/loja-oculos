@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { SalesService } from '@/features/sales'
+import { SalesService } from '@/features/sales/services/sales.service'
 import { VendasClient } from './vendas-client'
 
 export default async function VendasPage() {

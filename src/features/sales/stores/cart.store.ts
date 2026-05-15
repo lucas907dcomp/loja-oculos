@@ -57,9 +57,9 @@ export const useCartStore = create<CartStore>((set) => ({
   clearCart: () => set({ items: [], paymentBreakdown: {} }),
 }))
 
-export function selectTotal(state: CartStore): Decimal {
+export function selectTotal(state: CartStore): number {
   return state.items.reduce(
-    (sum, item) => sum.plus(new Decimal(item.salePrice.toString()).mul(item.quantity)),
-    new Decimal(0),
+    (sum, item) => sum + new Decimal(item.salePrice.toString()).mul(item.quantity).toNumber(),
+    0,
   )
 }

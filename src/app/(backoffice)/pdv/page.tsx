@@ -13,5 +13,23 @@ export default async function PdvPage() {
       </div>
     )
   }
-  return <PdvClient products={products} />
+  const serialized = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    brand: p.brand,
+    variants: p.variants.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      frameColor: v.frameColor,
+      lensColor: v.lensColor,
+      uvProtection: v.uvProtection,
+      isPolarized: v.isPolarized,
+      costPrice: v.costPrice.toNumber(),
+      salePrice: v.salePrice.toNumber(),
+      images: v.images,
+      inventory: v.inventory,
+    })),
+  }))
+
+  return <PdvClient products={serialized} />
 }

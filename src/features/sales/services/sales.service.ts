@@ -190,7 +190,8 @@ export class SalesService {
         data: {
           type: 'EXPENSE',
           amount: new Decimal(sale.totalAmount.toString()).toFixed(2),
-          saleId,
+          saleId: null,
+          note: `Devolução — Venda ${saleId.slice(-8).toUpperCase()}`,
         },
       })
 
@@ -238,8 +239,18 @@ export class SalesService {
     }
 
     return prisma.$transaction(async (tx) => {
+      // Mark original sale as returned and record the refund
       await tx.sale.update({ where: { id: saleId }, data: { status: 'RETURNED' } })
+      await tx.cashFlowEntry.create({
+        data: {
+          type: 'EXPENSE',
+          amount: new Decimal(sale.totalAmount.toString()).toFixed(2),
+          saleId: null,
+          note: `Troca — Venda ${saleId.slice(-8).toUpperCase()}`,
+        },
+      })
 
+      // Return original items to inventory
       for (const item of sale.items) {
         const inv = await tx.inventory.findUniqueOrThrow({ where: { variantId: item.variantId } })
         await tx.inventory.update({
@@ -251,20 +262,60 @@ export class SalesService {
         })
       }
 
+      // Calculate new sale total
+      const newTotal = newVariantData.reduce(
+        (sum, v, i) =>
+          sum.plus(new Decimal(v.salePrice.toString()).mul(newItems[i].quantity)),
+        new Decimal(0),
+      )
+
+      // Create the replacement sale
+      const newSale = await tx.sale.create({
+        data: {
+          totalAmount: newTotal.toFixed(2),
+          paymentBreakdown: { exchange: newTotal.toNumber() } as Prisma.InputJsonValue,
+          customerId: sale.customerId,
+          status: 'COMPLETED',
+        },
+      })
+
+      // Create sale items and decrement inventory for replacement items
       for (let i = 0; i < newItems.length; i++) {
         const item = newItems[i]
-        const inv = newVariantData[i].inventory!
+        const variant = newVariantData[i]
+        const inv = variant.inventory!
+
+        await tx.saleItem.create({
+          data: {
+            saleId: newSale.id,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            unitPrice: variant.salePrice.toString(),
+            unitCost: variant.costPrice.toString(),
+          },
+        })
+
         await tx.inventory.update({
           where: { id: inv.id },
           data: { quantity: { decrement: item.quantity } },
         })
+
         await tx.inventoryTransaction.create({
           data: { inventoryId: inv.id, type: 'EXCHANGE', quantityDelta: -item.quantity, note: null },
         })
       }
 
+      // Record cash flow for the replacement sale
+      await tx.cashFlowEntry.create({
+        data: {
+          type: 'INCOME',
+          amount: newTotal.toFixed(2),
+          saleId: newSale.id,
+        },
+      })
+
       return tx.sale.findUniqueOrThrow({
-        where: { id: saleId },
+        where: { id: newSale.id },
         include: {
           items: {
             include: {
