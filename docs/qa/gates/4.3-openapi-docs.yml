@@ -1,0 +1,24 @@
+schema: 1
+story: '4.3'
+gate: PASS
+status_reason: >
+  All 9 acceptance criteria met. OpenAPI 3.1.0 spec is complete and correct;
+  middleware bypass is exact-match safe; tsc and lint are clean with zero errors.
+reviewer: Quinn
+updated: '2026-05-15T16:00:00Z'
+top_issues:
+  - id: TEST-001
+    severity: low
+    finding: >
+      Pre-existing test failure in src/features/sales/__tests__/sales.service.test.ts:335
+      (processExchange expects cashFlowEntry.create NOT called, but it is called since commit
+      1f2ba8e). Story 4.3 introduced no new test failures — confirmed by stash comparison.
+    suggested_action: Update test expectation to match current processExchange behavior in a future story
+  - id: MNT-001
+    severity: low
+    finding: >
+      src/proxy.ts is superseded by the new src/middleware.ts but was intentionally left in place.
+      Contains its own config.matcher export which is inert (Next.js only reads middleware.ts),
+      but may cause confusion for future contributors.
+    suggested_action: Delete src/proxy.ts in a future cleanup story
+waiver: { active: false }

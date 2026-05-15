@@ -59,6 +59,13 @@ O sistema resolve o problema central do lojista: **comprar bem, controlar giro d
 | FR-10 | Geração e impressão de etiquetas de preço com QR Code por variante (URL configurável) | P1 | requirements.json |
 | FR-11 | Dashboard executivo: top produtos por margem, top por giro, dead stock (>60 dias), ticket médio, receita total | P1 | requirements.json |
 | FR-12 | Exportação de catálogo de produtos para JSON/CSV compatível com e-commerce (WooCommerce/Shopify schema) | P2 | requirements.json |
+| FR-13 | Vitrine — Listagem de produtos em grid responsivo consumindo `GET /api/v1/products`; cards com imagem, nome, marca, menor preço das variantes e badge de estoque via `GET /api/v1/inventory`; filtro por marca | P0 | Epic 5 — cliente |
+| FR-14 | Vitrine — Detalhe de produto com galeria de imagens da variante selecionada, seletor de variante (frameColor, lensColor, uvProtection, isPolarized), preço e status de estoque individual, botão "Adicionar ao Carrinho" | P0 | Epic 5 — cliente |
+| FR-15 | Vitrine — Carrinho client-side com Zustand + localStorage: adicionar/remover variantes, contagem no header, total calculado com Decimal.js | P0 | Epic 5 — cliente |
+| FR-16 | Vitrine — Checkout simplificado: captura de dados do cliente → `POST /api/v1/customers`; geração de link WhatsApp com lista de produtos do carrinho (sem gateway de pagamento no MVP) | P1 | Epic 5 — cliente |
+| FR-17 | Vitrine — Busca client-side por nome de produto e marca; campo de busca no header; resultados em tempo real sem requisição adicional | P1 | Epic 5 — cliente |
+| FR-18 | Vitrine — Homepage com hero section e seção de produtos em destaque (benchmark: useblox.com.br) | P1 | Epic 5 — cliente |
+| FR-19 | Vitrine — Design responsivo mobile-first: 1 col (< 640px) / 2 col (640-1024px) / 3 col (> 1024px); menu hambúrguer; touch-friendly | P0 | Epic 5 — cliente |
 
 ### 2.2 Non-Functional Requirements
 
@@ -77,6 +84,10 @@ O sistema resolve o problema central do lojista: **comprar bem, controlar giro d
 | CON-2 | Técnica | Arquitetura deve facilitar integração futura com e-commerce sem reescrita | Justifica API-first: `app/api/v1/` desde o MVP |
 | CON-3 | Negócio | MVP focado em loja física única | Sem lógica multi-tenant no banco de dados no MVP |
 | CON-4 | Negócio | Produto exclusivo: óculos de sol | Variantes (frameColor, lensColor, uvProtection, isPolarized) são first-class no schema |
+| CON-5 | Técnica | Endpoints `/api/v1/*` protegidos por API Key estática (`X-Api-Key` header) | Vitrine consome a API server-side; chave nunca exposta ao browser |
+| CON-6 | Técnica | Vitrine Headless — todos os dados de catálogo consumidos exclusivamente via `GET /api/v1/products` e `GET /api/v1/inventory` | Zero acesso direto ao banco de dados a partir da Vitrine; padrão BFF via `src/lib/storefront/api.ts` |
+| CON-7 | Segurança | `ECOMMERCE_API_KEY` server-side only — chamadas à `/api/v1/` feitas em Next.js Server Components ou Route Handlers | Nunca exposta em `'use client'`; nunca em `NEXT_PUBLIC_*` |
+| CON-8 | Negócio | Cart client-side only no MVP — Zustand + localStorage; sem persistência de carrinho no banco de dados | Checkout simplificado via WhatsApp; gateway de pagamento fora do escopo MVP |
 
 ---
 
@@ -382,6 +393,29 @@ export const config = {
 | `app/api/v1/customers/route.ts` | `GET/POST /api/v1/customers` — sync de clientes | CON-2 |
 | `src/features/export/services/export.service.ts` | Geração de JSON/CSV de catálogo | FR-12 |
 
+### 5.6 Epic 5 — Vitrine E-commerce (Headless)
+
+*(Benchmark: useblox.com.br — arquitetura headless consumindo /api/v1/ via CON-6)*
+
+| Arquivo | Propósito | FR |
+|---------|-----------|---|
+| `src/app/(storefront)/loja/layout.tsx` | Layout da Vitrine: header (logo, busca, ícone carrinho com badge), footer (políticas, redes sociais) | FR-13, FR-19 |
+| `src/app/(storefront)/loja/page.tsx` | Homepage: hero section + seção de destaques (6 produtos) | FR-18 |
+| `src/app/(storefront)/loja/produtos/page.tsx` | Listagem de produtos: grid responsivo + filtro por marca | FR-13, FR-17, FR-19 |
+| `src/app/(storefront)/loja/produtos/[id]/page.tsx` | Detalhe do produto: galeria, seletor de variante, preço, estoque, botão carrinho | FR-14 |
+| `src/app/(storefront)/loja/checkout/page.tsx` | Checkout simplificado: formulário cliente + link WhatsApp | FR-16 |
+| `src/lib/storefront/api.ts` | BFF: funções server-side `getProducts()`, `getInventory()` — chamam `/api/v1/` com X-Api-Key via `fetch()` + ISR cache | CON-6, CON-7 |
+| `src/features/storefront/stores/cart.store.ts` | Zustand store do carrinho: addItem, removeItem, updateQty, clear, total (Decimal.js) + persistência localStorage | FR-15, CON-8 |
+| `src/features/storefront/components/product-card.tsx` | Card de produto: imagem, nome, marca, preço mínimo das variantes, badge estoque, botão "Ver" | FR-13 |
+| `src/features/storefront/components/product-grid.tsx` | Grid responsivo de ProductCard com loading skeleton | FR-13, FR-19 |
+| `src/features/storefront/components/variant-selector.tsx` | Seletor visual de variante (swatches de cor) + atualização de preço/estoque | FR-14 |
+| `src/features/storefront/components/cart-drawer.tsx` | Drawer lateral do carrinho: itens, quantidades, total, link "Finalizar Pedido" | FR-15 |
+| `src/features/storefront/components/brand-filter.tsx` | Filtro de marca: botões de seleção, integrado com `getProducts(brand)` | FR-13 |
+| `src/features/storefront/components/search-bar.tsx` | Barra de busca do header: busca client-side sobre catálogo já carregado | FR-17 |
+| `src/features/storefront/components/hero-section.tsx` | Hero da homepage com banner e CTA | FR-18 |
+| `src/features/storefront/__tests__/storefront-api.test.ts` | Testes unitários do BFF: mock de fetch, validação dos payloads | CON-6 |
+| `src/features/storefront/__tests__/cart.store.test.ts` | Testes unitários do cart store: operações CRUD, cálculo de total | FR-15 |
+
 ---
 
 ## 6. Estratégia de Testes
@@ -588,14 +622,26 @@ Feature: Exportação de Catálogo (FR-12)
 - [ ] Testes unitários: AnalyticsService (90%+)
 
 ### Epic 4 — E-commerce Bridge
-- [ ] `CON-5`: Implementar `src/middleware.ts` com validação de `X-API-Key` para `/api/v1/:path*`
-- [ ] `CON-5`: Adicionar `ECOMMERCE_API_KEY` ao `.env.local.example` e configurar no Vercel
-- [ ] `FR-12`: `ExportService` — geração de JSON/CSV de catálogo com filtros
-- [ ] `GET /api/v1/products` — catálogo paginado com variantes e estoque
-- [ ] `GET /api/v1/inventory` — saldos de estoque em tempo real
-- [ ] `GET /api/v1/customers` — lista de clientes para sync
-- [ ] Teste de integração: request sem `X-API-Key` → `401`; com key válida → `200`
-- [ ] Documentação OpenAPI para `app/api/v1/`
+- [x] `CON-5`: Implementar `src/middleware.ts` com validação de `X-API-Key` para `/api/v1/:path*`
+- [x] `CON-5`: Adicionar `ECOMMERCE_API_KEY` ao `.env.local.example` e configurar no Vercel
+- [x] `FR-12`: `ExportService` — geração de JSON/CSV de catálogo com filtros
+- [x] `GET /api/v1/products` — catálogo paginado com variantes e estoque
+- [x] `GET /api/v1/inventory` — saldos de estoque em tempo real
+- [x] `GET /api/v1/customers` — lista de clientes para sync
+- [x] Teste de integração: request sem `X-API-Key` → `401`; com key válida → `200`
+- [x] Documentação OpenAPI para `app/api/v1/`
+
+### Epic 5 — Vitrine E-commerce (Headless)
+
+*(Benchmark: useblox.com.br — CON-6, CON-7, CON-8)*
+
+- [ ] `FR-13 + FR-19`: Setup route group `(storefront)` com layout responsivo (header + footer); BFF layer `src/lib/storefront/api.ts`; listagem de produtos em grid 1/2/3 colunas; cards com imagem, nome, marca, preço mínimo, badge de estoque; filtro por marca
+- [ ] `FR-14`: Página de detalhe `/loja/produtos/[id]`: galeria de imagens, seletor de variante, preço por variante, badge de estoque, botão "Adicionar ao Carrinho"
+- [ ] `FR-15`: Carrinho client-side (Zustand + localStorage): adicionar/remover/alterar quantidade, contagem no header, total com Decimal.js, drawer lateral
+- [ ] `FR-16`: Checkout simplificado: formulário de captura (nome, telefone) → `POST /api/v1/customers`; link WhatsApp com carrinho serializado
+- [ ] `FR-17`: Busca client-side por nome e marca; campo no header com resultados em tempo real
+- [ ] `FR-18`: Homepage `/loja`: hero section + seção de destaques (primeiros 6 produtos do catálogo)
+- [ ] Testes unitários: `StorefrontApi.getProducts()`, `CartStore` operations (90%+)
 
 ### Transversal (todos os epics)
 - [ ] Validar constraint `quantity >= 0` no service (não depender só do banco)
