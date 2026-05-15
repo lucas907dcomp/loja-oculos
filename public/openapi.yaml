@@ -1,0 +1,370 @@
+openapi: 3.1.0
+
+info:
+  title: Gestão Loja de Óculos — E-commerce Bridge API
+  version: 1.0.0
+  description: >
+    REST API bridge for e-commerce platform integration.
+    All endpoints require the X-Api-Key header for authentication (CON-5).
+    The spec itself (/api/v1/openapi) is publicly accessible without a key.
+
+servers:
+  - url: /api/v1
+    description: E-commerce Bridge
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: >
+        Static API key stored in ECOMMERCE_API_KEY environment variable.
+        Pass the key in every request to /api/v1/* endpoints.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Missing or invalid API key
+
+    ExportVariant:
+      type: object
+      required:
+        - id
+        - sku
+        - frameColor
+        - lensColor
+        - uvProtection
+        - isPolarized
+        - price
+        - stock
+        - images
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: OC-PRT-CZA-UV400-P
+        frameColor:
+          type: string
+          example: Preto
+        lensColor:
+          type: string
+          example: Cinza
+        uvProtection:
+          type: string
+          example: UV400
+        isPolarized:
+          type: boolean
+        price:
+          type: string
+          description: >
+            Decimal price as string (e.g. "199.90").
+            Stored as string to preserve precision — never cast to float.
+          example: "199.90"
+        stock:
+          type: integer
+          minimum: 0
+          description: Current inventory quantity; 0 when no inventory row exists
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    ExportProduct:
+      type: object
+      required:
+        - id
+        - name
+        - brand
+        - variants
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Óculos X1
+        brand:
+          type: string
+          example: Ray-Ban
+        description:
+          type:
+            - string
+            - "null"
+        supplierId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportVariant"
+
+    InventoryEntry:
+      type: object
+      required:
+        - variantId
+        - sku
+        - productName
+        - quantity
+        - minStockAlert
+        - isLowStock
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        minStockAlert:
+          type: integer
+          minimum: 0
+          description: Alert fires when quantity <= minStockAlert
+        isLowStock:
+          type: boolean
+          description: true when quantity <= minStockAlert
+
+    Customer:
+      type: object
+      required:
+        - id
+        - name
+        - tags
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type:
+            - string
+            - "null"
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+        tags:
+          type: array
+          items:
+            type: string
+          example:
+            - polarizado
+            - regular
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCustomerRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        tags:
+          type: array
+          items:
+            type: string
+
+paths:
+  /products:
+    get:
+      summary: Export product catalog
+      description: >
+        Returns the product catalog in JSON or CSV format.
+        Excludes archived products by default.
+        JSON format returns an array of ExportProduct objects.
+        CSV format returns a file with one row per variant.
+      operationId: getProducts
+      parameters:
+        - name: format
+          in: query
+          description: Response format
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+            default: json
+        - name: supplierId
+          in: query
+          description: Filter products by supplier ID
+          schema:
+            type: string
+            format: uuid
+        - name: brand
+          in: query
+          description: Filter products by brand name
+          schema:
+            type: string
+        - name: includeArchived
+          in: query
+          description: Pass "true" to include archived products in the result
+          schema:
+            type: string
+            enum:
+              - "true"
+      responses:
+        "200":
+          description: Catalog exported successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExportProduct"
+            text/csv:
+              schema:
+                type: string
+                description: >
+                  CSV with headers:
+                  product_id,product_name,brand,description,variant_id,sku,
+                  frame_color,lens_color,uv_protection,is_polarized,price,stock,images
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Failed to export catalog
+
+  /inventory:
+    get:
+      summary: Get inventory stock levels
+      description: >
+        Returns current stock levels for all non-archived product variants,
+        ordered by SKU ascending.
+      operationId: getInventory
+      responses:
+        "200":
+          description: Inventory stock levels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryEntry"
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Failed to fetch inventory
+
+  /customers:
+    get:
+      summary: List customers
+      description: >
+        Returns all customers ordered by creation date (newest first).
+        Used by e-commerce platform to import the customer base.
+      operationId: getCustomers
+      responses:
+        "200":
+          description: Customer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Failed to fetch customers
+
+    post:
+      summary: Create or sync a customer
+      description: >
+        Creates a new customer record.
+        Used by the e-commerce platform to sync customer data into the backoffice.
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "201":
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingName:
+                  value:
+                    error: name is required
+                invalidJson:
+                  value:
+                    error: Invalid JSON body
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Failed to create customer

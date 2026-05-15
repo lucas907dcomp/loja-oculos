@@ -1,0 +1,35 @@
+schema: 1
+story: '4.2'
+gate: CONCERNS
+status_reason: >
+  All 8 acceptance criteria met; sidebar lacks print:hidden causing it to appear in print output
+  alongside the receipt — fix recommended before PR merge.
+reviewer: Quinn
+updated: '2026-05-15T00:00:00Z'
+top_issues:
+  - id: MNT-001
+    severity: medium
+    finding: >
+      <Sidebar /> in src/app/(backoffice)/layout.tsx has no print:hidden class.
+      When user clicks Imprimir, sidebar navigation prints alongside the receipt,
+      violating AC-7 ("sidebar must not appear in print preview").
+    suggested_action: >
+      Wrap <Sidebar /> in a div with print:hidden in layout.tsx, or add print:hidden
+      directly to the Sidebar component's root element. Fix before merge.
+  - id: MNT-002
+    severity: low
+    finding: >
+      sale-receipt.tsx:60 uses array index (i) as React key for receipt items.
+      Items are static once rendered so no functional bug occurs, but it is a React anti-pattern.
+    suggested_action: >
+      Use item.sku as key — SKU is unique within a sale.
+  - id: TEST-001
+    severity: low
+    finding: >
+      Task 7 (manual browser test: register sale → receipt appears → print → nova venda)
+      was not completed by @dev before InReview. Code correctness confirmed via tsc + lint.
+    suggested_action: >
+      Run manual golden-path test in browser before merge to confirm print dialog
+      behaviour and PDV reset state.
+waiver:
+  active: false
