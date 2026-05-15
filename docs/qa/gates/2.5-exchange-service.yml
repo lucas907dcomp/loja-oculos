@@ -1,0 +1,12 @@
+schema: 1
+story: '2.5'
+gate: PASS
+status_reason: 'All 7 acceptance criteria met, 79 tests passing, typecheck and lint clean. processExchange() correctly implements atomic exchange via $transaction with no CashFlowEntry; exchange UI functional with server-side validation.'
+reviewer: Quinn
+updated: '2026-05-15T08:05:00Z'
+top_issues:
+  - id: 'MNT-001'
+    severity: low
+    finding: 'Exchange form inputs (<select>, <input>) lack <label> elements for accessibility'
+    suggested_action: 'Add aria-label or visible <label> elements in a follow-up story post-MVP'
+waiver: { active: false }
