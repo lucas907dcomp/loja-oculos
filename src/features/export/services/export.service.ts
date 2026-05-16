@@ -51,6 +51,32 @@ export class ExportService {
     return ExportService.fetchProducts(brand ? { brand } : undefined)
   }
 
+  static async getStorefrontProduct(id: string): Promise<ExportProduct | null> {
+    const product = await prisma.product.findFirst({
+      where: { id, isArchived: false },
+      include: { variants: { include: { inventory: true } } },
+    })
+    if (!product) return null
+    return {
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      description: product.description,
+      supplierId: product.supplierId,
+      variants: product.variants.map((v): ExportVariant => ({
+        id: v.id,
+        sku: v.sku,
+        frameColor: v.frameColor,
+        lensColor: v.lensColor,
+        uvProtection: v.uvProtection,
+        isPolarized: v.isPolarized,
+        price: v.salePrice.toString(),
+        stock: v.inventory?.quantity ?? 0,
+        images: v.images,
+      })),
+    }
+  }
+
   static async getStorefrontInventory(): Promise<InventoryEntry[]> {
     const variants = await prisma.productVariant.findMany({
       where: { product: { isArchived: false } },
