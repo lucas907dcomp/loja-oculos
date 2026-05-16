@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { calculateMargin } from '@/lib/decimal'
 import { createProductAction } from '@/features/products/actions'
+import { ImageUploadInput } from '@/features/products/components/image-upload-input'
 
 const UV_OPTIONS = ['UV380', 'UV400', 'UV420'] as const
 
@@ -326,19 +327,27 @@ export function ProductForm({ suppliers }: ProductFormProps) {
                   />
                 </div>
 
-                {/* Image URLs (up to 5) */}
-                <div className="space-y-1">
+                {/* Image upload (up to 5) */}
+                <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
-                    URLs de Imagens (opcional, até 5)
+                    Imagens (opcional, até 5) — clique, arraste ou cole URL
                   </Label>
-                  {([0, 1, 2, 3, 4] as const).map((n) => (
-                    <Input
-                      key={n}
-                      {...register(`variants.${index}.image${n}`)}
-                      placeholder={`URL da imagem ${n + 1}`}
-                      className="text-xs"
-                    />
-                  ))}
+                  <div className="flex flex-wrap gap-3">
+                    {([0, 1, 2, 3, 4] as const).map((n) => (
+                      <Controller
+                        key={n}
+                        control={control}
+                        name={`variants.${index}.image${n}`}
+                        render={({ field: f }) => (
+                          <ImageUploadInput
+                            label={`Foto ${n + 1}`}
+                            value={f.value ?? ''}
+                            onChange={f.onChange}
+                          />
+                        )}
+                      />
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
