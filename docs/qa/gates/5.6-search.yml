@@ -1,0 +1,14 @@
+schema: 1
+story: '5.6'
+gate: PASS
+status_reason: >
+  Todos os 6 ACs implementados. 9 testes RTL passando cobrindo SearchBar
+  (render, router.replace com q, router.replace sem q) e ProductSearchClient
+  (filtro nome, filtro marca, sem query, sem match, contagem, BrandFilter).
+  tsc limpo. Filtragem 100% client-side em memória — zero requisições adicionais.
+  CON-7 garantido: nenhum secret exposto em componentes client.
+reviewer: Quinn
+updated: '2026-05-16T14:21:00Z'
+top_issues: []
+waiver:
+  active: false
