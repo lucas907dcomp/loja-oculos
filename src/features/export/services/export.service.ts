@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import type { ExportFilters, ExportProduct, ExportVariant } from '../export.contract'
+import type { ExportFilters, ExportProduct, ExportVariant, InventoryEntry } from '../export.contract'
 
 export class ExportService {
   private static buildWhere(filters?: ExportFilters) {
@@ -45,6 +45,29 @@ export class ExportService {
   static async exportCatalogJson(filters?: ExportFilters): Promise<string> {
     const products = await ExportService.fetchProducts(filters)
     return JSON.stringify(products, null, 2)
+  }
+
+  static async getStorefrontProducts(brand?: string): Promise<ExportProduct[]> {
+    return ExportService.fetchProducts(brand ? { brand } : undefined)
+  }
+
+  static async getStorefrontInventory(): Promise<InventoryEntry[]> {
+    const variants = await prisma.productVariant.findMany({
+      where: { product: { isArchived: false } },
+      include: {
+        product: { select: { name: true } },
+        inventory: true,
+      },
+      orderBy: { sku: 'asc' },
+    })
+    return variants.map((v) => ({
+      variantId: v.id,
+      sku: v.sku,
+      productName: v.product.name,
+      quantity: v.inventory?.quantity ?? 0,
+      minStockAlert: v.inventory?.minStockAlert ?? 3,
+      isLowStock: (v.inventory?.quantity ?? 0) <= (v.inventory?.minStockAlert ?? 3),
+    }))
   }
 
   static async exportCatalogCsv(filters?: ExportFilters): Promise<string> {

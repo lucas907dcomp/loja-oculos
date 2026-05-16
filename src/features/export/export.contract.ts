@@ -4,6 +4,15 @@ export interface ExportFilters {
   includeArchived?: boolean
 }
 
+export interface InventoryEntry {
+  variantId: string
+  sku: string
+  productName: string
+  quantity: number
+  minStockAlert: number
+  isLowStock: boolean
+}
+
 export interface ExportVariant {
   id: string
   sku: string
