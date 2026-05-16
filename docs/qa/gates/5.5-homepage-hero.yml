@@ -1,0 +1,13 @@
+schema: 1
+story: '5.5'
+gate: PASS
+status_reason: >
+  Todos os 4 ACs implementados. 5 testes RTL passando cobrindo hero render,
+  seção em destaque, slice(0,6) e link "Ver todos". tsc e lint limpos.
+  HeroSection é Server Component puro; homepage substitui catálogo completo por
+  hero + 6 destaques conforme especificado.
+reviewer: Quinn
+updated: '2026-05-16T12:35:00Z'
+top_issues: []
+waiver:
+  active: false
