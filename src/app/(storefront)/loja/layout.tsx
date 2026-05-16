@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CartHeader } from '@/features/storefront/components/cart-header'
+import { SearchBar } from '@/features/storefront/components/search-bar'
 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const email = process.env.STOREFRONT_EMAIL ?? 'contato@loja.com.br'
@@ -8,10 +9,13 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <Link href="/loja" className="text-lg font-bold text-gray-900">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4">
+          <Link href="/loja" className="shrink-0 text-lg font-bold text-gray-900">
             Ótica da Loja
           </Link>
+          <div className="hidden flex-1 sm:flex">
+            <SearchBar />
+          </div>
           <CartHeader />
         </div>
       </header>
