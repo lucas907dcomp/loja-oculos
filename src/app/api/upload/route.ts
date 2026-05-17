@@ -40,11 +40,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const blob = await put(file.name, file, { access: 'public' })
+    const blob = await put(file.name, file, { access: 'public', addRandomSuffix: true })
     return NextResponse.json({ url: blob.url })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('Blob upload error:', message)
-    return NextResponse.json({ error: `Blob error: ${message}` }, { status: 500 })
+    console.error('Blob upload error:', err)
+    return NextResponse.json({ error: 'Falha no upload da imagem.' }, { status: 500 })
   }
 }
