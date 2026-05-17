@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js'
-import { Prisma } from '@/generated/prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import type { CreateSaleDTO, CreateSaleItemDTO, SaleListItem, SaleWithItems } from '../sales.contract'
 

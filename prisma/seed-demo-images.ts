@@ -3,7 +3,7 @@
  * Run with: npx tsx prisma/seed-demo-images.ts
  */
 import 'dotenv/config'
-import { PrismaClient } from '../src/generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 import Decimal from 'decimal.js'
 
 const prisma = new PrismaClient()
