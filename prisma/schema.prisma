@@ -166,3 +166,10 @@ enum CashFlowType {
   INCOME
   EXPENSE
 }
+
+// Singleton row — id always "default"
+model StoreSettings {
+  id           String   @id @default("default")
+  heroImageUrl String?
+  updatedAt    DateTime @updatedAt
+}

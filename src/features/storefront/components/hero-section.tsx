@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { StoreSettingsService } from '@/features/store-settings/store-settings.service'
 
-export function HeroSection() {
-  const imageUrl = process.env.NEXT_PUBLIC_HERO_IMAGE_URL
+export async function HeroSection() {
+  const { heroImageUrl } = await StoreSettingsService.get()
 
   return (
     <section className="relative overflow-hidden bg-gray-900 px-4 py-20 text-white sm:py-28">
-      {imageUrl && (
+      {heroImageUrl && (
         <Image
-          src={imageUrl}
+          src={heroImageUrl}
           alt=""
           fill
           className="object-cover opacity-40"

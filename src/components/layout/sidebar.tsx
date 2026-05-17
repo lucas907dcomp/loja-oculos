@@ -12,6 +12,7 @@ import {
   Truck,
   DollarSign,
   Tag,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,7 @@ const navItems = [
   { label: 'Fornecedores', href: '/fornecedores', icon: Truck },
   { label: 'Etiquetas', href: '/etiquetas', icon: Tag },
   { label: 'Financeiro', href: '/financeiro', icon: DollarSign },
+  { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
 export function Sidebar() {
