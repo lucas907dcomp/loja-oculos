@@ -32,7 +32,21 @@ export async function POST(req: Request) {
     )
   }
 
-  const blob = await put(file.name, file, { access: 'public' })
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      { error: 'Armazenamento de imagens não configurado. Adicione BLOB_READ_WRITE_TOKEN nas variáveis de ambiente.' },
+      { status: 503 },
+    )
+  }
 
-  return NextResponse.json({ url: blob.url })
+  try {
+    const blob = await put(file.name, file, { access: 'public' })
+    return NextResponse.json({ url: blob.url })
+  } catch (err) {
+    console.error('Blob upload error:', err)
+    return NextResponse.json(
+      { error: 'Falha no upload. Verifique se o BLOB_READ_WRITE_TOKEN está correto.' },
+      { status: 500 },
+    )
+  }
 }
