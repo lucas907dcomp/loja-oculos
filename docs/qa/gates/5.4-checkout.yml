@@ -1,0 +1,20 @@
+schema: 1
+story: '5.4'
+gate: PASS
+status_reason: >
+  Todos os 6 ACs implementados. 8 testes RTL passando incluindo validação,
+  sucesso com clearCart, erro sem clearCart, e window.open com URL WhatsApp.
+  CON-7 garantido: prisma e ECOMMERCE_API_KEY ausentes em page.tsx.
+reviewer: Quinn
+updated: '2026-05-16T12:20:00Z'
+top_issues:
+  - id: MNT-001
+    severity: low
+    finding: >
+      Se window.open for bloqueado por popup blocker, o usuário não vê o link
+      WhatsApp. A UI transiciona para "Pedido enviado!" sem oferecer fallback.
+    suggested_action: >
+      Em story futura: capturar retorno de window.open (null = bloqueado) e
+      renderizar o link como <a> alternativo.
+waiver:
+  active: false

@@ -1,0 +1,26 @@
+schema: 1
+story: '5.3'
+gate: PASS
+status_reason: >
+  All 5 acceptance criteria met. 9 RTL tests passing with correct Zustand mock
+  pattern and within() scoping. tsc/lint clean, CON-7 compliant, no regressions.
+reviewer: Quinn
+updated: '2026-05-16T12:10:00Z'
+top_issues:
+  - id: TEST-001
+    severity: low
+    finding: >
+      Aumentar quantidade (+) button not explicitly tested; only the − button
+      (Diminuir quantidade) has a dedicated updateQuantity assertion.
+    suggested_action: >
+      Add a symmetric test for the + button in a future story touching cart-ui.
+  - id: MNT-001
+    severity: low
+    finding: >
+      formatPrice() uses parseFloat() without a NaN guard. Malformed price
+      strings (e.g., empty string) would display "NaN" in the UI.
+    suggested_action: >
+      Add a fallback: parseFloat(price) || 0 — low priority, price originates
+      from server-validated product data.
+waiver:
+  active: false
