@@ -169,7 +169,7 @@ enum CashFlowType {
 
 // Singleton row — id always "default"
 model StoreSettings {
-  id           String   @id @default("default")
-  heroImageUrl String?
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default("default")
+  heroImages String[]
+  updatedAt  DateTime @updatedAt
 }

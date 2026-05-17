@@ -1,13 +1,13 @@
 import { prisma } from '@/lib/prisma'
 
 export type StoreSettingsData = {
-  heroImageUrl: string | null
+  heroImages: string[]
 }
 
 export class StoreSettingsService {
   static async get(): Promise<StoreSettingsData> {
     const row = await prisma.storeSettings.findUnique({ where: { id: 'default' } })
-    return { heroImageUrl: row?.heroImageUrl ?? null }
+    return { heroImages: row?.heroImages ?? [] }
   }
 
   static async update(data: Partial<StoreSettingsData>): Promise<void> {
