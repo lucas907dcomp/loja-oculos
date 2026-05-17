@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { getProducts, getInventory } from '@/lib/storefront/api'
 import { ProductGrid } from '@/features/storefront/components/product-grid'

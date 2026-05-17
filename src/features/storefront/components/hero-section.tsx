@@ -1,9 +1,22 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function HeroSection() {
+  const imageUrl = process.env.NEXT_PUBLIC_HERO_IMAGE_URL
+
   return (
-    <section className="bg-gray-900 px-4 py-20 text-white sm:py-28">
-      <div className="mx-auto max-w-4xl text-center">
+    <section className="relative overflow-hidden bg-gray-900 px-4 py-20 text-white sm:py-28">
+      {imageUrl && (
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          className="object-cover opacity-40"
+          priority
+          sizes="100vw"
+        />
+      )}
+      <div className="relative mx-auto max-w-4xl text-center">
         <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
           Óculos de Sol com Estilo
         </h1>
